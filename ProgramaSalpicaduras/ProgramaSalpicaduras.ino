@@ -6,37 +6,37 @@
 
 #define FinCarreraSup 7
 #define FinCarreraInf 6
-
+#define BotReset 4
 #define BotComenzar 3
 #define BotSeleccion 2
-  
-String a,b,c;
-int velocidad,tinicial,d,velocidad_serial;
+#define lapsoTiempo 600
+#define V_salpicaduras 900
 
-int v_10=2800;
-int v_4=1360;
+int velocidad;
 
 void movimiento_motor()
+{ 
+digitalWrite(enable,LOW);
+if (digitalRead(FinCarreraInf)==LOW)
 {
-digitalWrite(enable,LOW);  
 digitalWrite(pasos,HIGH);
 delayMicroseconds(velocidad);
 digitalWrite(pasos,LOW);
 delayMicroseconds(velocidad);    
-  }
+}
+digitalWrite(enable,HIGH);
+}
 
-void seleccionarVelocidad()
+void movimientoHaciaOrigen()
 {
- if(digitalRead(BotSeleccion)==HIGH)
- {
- //Serial.println("bajando con delay de 800");
- velocidad=750; 
-  }
- else
- {
-  //Serial.println("Bajando con delay de 2000");
- velocidad=1600; 
-  } 
+while(digitalRead(FinCarreraSup)==LOW)
+{
+digitalWrite(dir,HIGH);
+//Serial.println("Subiendo motor hasta que cierre el final de carrera");
+velocidad=800;
+movimiento_motor();
+}
+digitalWrite(dir,LOW); //dirección hacia adelante (expulsa líquido)
 }
 
 void setup() {
@@ -44,63 +44,42 @@ void setup() {
   pinMode(dir,OUTPUT);
   pinMode(pasos,OUTPUT);
   pinMode(enable,OUTPUT);
-  digitalWrite(enable,LOW);  
+  digitalWrite(enable,HIGH);  
   
-  pinMode(FinCarreraSup,INPUT); //bot7
-  pinMode(FinCarreraInf,INPUT); //bpot6
-  
-  pinMode(BotComenzar,INPUT);  //bot3
-  pinMode(BotSeleccion,INPUT); //bot2
+  pinMode(FinCarreraSup,INPUT); //pin7
+  pinMode(FinCarreraInf,INPUT); //pin6
+  pinMode(BotComenzar,INPUT);  //pin3
+  pinMode(BotSeleccion,INPUT); //pin2
+  pinMode(BotReset,INPUT); //pin4
 }
 
 void loop() {
-//entro al loop que me posibilita mover el psito hacia arriba
-while(digitalRead(FinCarreraSup)==LOW)
+//------------POSICIONAMIENTO INICIAL---------//
+movimientoHaciaOrigen(); // primera etapa del ensayo, se vuelve a origen
+//--------------------------------------------//
+
+while(digitalRead(FinCarreraInf)==LOW) //mientras que NO cierre el final de carrer inferior
 {
-digitalWrite(dir,HIGH);
-digitalWrite(enable,LOW); 
-//Serial.println("Subiendo motor hasta que cierre el final de carrera");
-velocidad=2000;
+Serial.println("FCInferiorAbierto"); //impresión solo con motivos de debug, se puede anular
+digitalWrite(enable,HIGH); //se deshabilitan los motores
+//-------------SI SE RESETEA------------------//
+if (BotReset==HIGH) {movimientoHaciaOrigen();} //si se apreta RESET vuelve a origen
+Serial.println("FCInferiorAbierto"); //impresión solo con motivos de debug, se puede anular
+//--------------------------------------------//
+
+if (digitalRead(BotComenzar)==HIGH)
+{
+int t0=millis();
+Serial.println("Botonpresionado");
+while((millis()-t0)<lapsoTiempo)
+{
+//Serial.println("Bajando hasta que cierre el final de carrera de abajo");
+if (digitalRead(FinCarreraInf)==LOW) //chequeo nuevamente que no haya llegado al final
+{ 
 movimiento_motor();
-}//endWhile
-
-digitalWrite(enable,HIGH); 
-
- //empiezo cuando apreto el boton de comienzo
- if (digitalRead(BotComenzar)==HIGH)
- {//Serial.println("se presionó el boton para comenzar el ensayo!!!!");
- seleccionarVelocidad();
- while(digitalRead(FinCarreraInf)==LOW)
- {
- //Serial.println("bajando");
- digitalWrite(dir,LOW);
-
- if (digitalRead(BotComenzar)==HIGH)
- {
- int t0=millis();
- //Serial.println("presionado");
- while((millis()-t0)<500)
- {
- //Serial.println("Bajando hasta que cierre el final de carrera de abajo");
- if (digitalRead(FinCarreraInf)==LOW)
- {
- digitalWrite(enable,LOW); 
- movimiento_motor();
- }
- }
- }
- }
-
-while(digitalRead(FinCarreraSup)==LOW)
-{
-digitalWrite(dir,HIGH);
-//Serial.println("Subiendo motor hasta que cierre el final de carrera");
-velocidad=750;
-digitalWrite(enable,LOW); 
-movimiento_motor();   
-  }//endWhile
-  
-}//endif
-//Serial.println("No se presionó el boton para comenzar!");
 }
+}//endWhile salpicadura
+}//endif botonPresionado
+}//endWhile ciclo de ensayo
+}//endLoop
  /////////////////////////////////FIN DE LOOP/////////////////////////////////////////
