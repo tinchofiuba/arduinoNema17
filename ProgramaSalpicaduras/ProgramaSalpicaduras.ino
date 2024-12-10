@@ -12,11 +12,11 @@
 #define lapsoTiempo 600
 #define V_salpicaduras 900
 
-int velocidad;
+int velocidad,t0;
 
 void movimiento_motor()
 { 
-digitalWrite(enable,LOW);
+digitalWrite(enable,LOW); //habilito el motor
 if (digitalRead(FinCarreraInf)==LOW)
 {
 digitalWrite(pasos,HIGH);
@@ -24,19 +24,19 @@ delayMicroseconds(velocidad);
 digitalWrite(pasos,LOW);
 delayMicroseconds(velocidad);    
 }
-digitalWrite(enable,HIGH);
+digitalWrite(enable,HIGH); //deshabilito el motor
 }
 
 void movimientoHaciaOrigen()
 {
-while(digitalRead(FinCarreraSup)==LOW)
+while(digitalRead(FinCarreraSup)==LOW) //mientras el FC esté abierto
 {
-digitalWrite(dir,HIGH);
+digitalWrite(dir,HIGH); //direcciono el movimiento hacia adelante/abajo
 //Serial.println("Subiendo motor hasta que cierre el final de carrera");
 velocidad=800;
 movimiento_motor();
 }
-digitalWrite(dir,LOW); //dirección hacia adelante (expulsa líquido)
+digitalWrite(dir,LOW); //direcciono el movimiento hacia arriba/atrás
 }
 
 void setup() {
@@ -58,9 +58,8 @@ void loop() {
 movimientoHaciaOrigen(); // primera etapa del ensayo, se vuelve a origen
 //--------------------------------------------//
 
-while(digitalRead(FinCarreraInf)==LOW) //mientras que NO cierre el final de carrer inferior
+while(digitalRead(FinCarreraInf)==LOW) //mientras el FC esté abierto
 {
-Serial.println("FCInferiorAbierto"); //impresión solo con motivos de debug, se puede anular
 digitalWrite(enable,HIGH); //se deshabilitan los motores
 //-------------SI SE RESETEA------------------//
 if (BotReset==HIGH) {movimientoHaciaOrigen();} //si se apreta RESET vuelve a origen
@@ -69,8 +68,8 @@ Serial.println("FCInferiorAbierto"); //impresión solo con motivos de debug, se 
 
 if (digitalRead(BotComenzar)==HIGH)
 {
-int t0=millis();
-Serial.println("Botonpresionado");
+t0=millis();
+Serial.println("El ensayo a comenzado");
 while((millis()-t0)<lapsoTiempo)
 {
 //Serial.println("Bajando hasta que cierre el final de carrera de abajo");
@@ -78,7 +77,16 @@ if (digitalRead(FinCarreraInf)==LOW) //chequeo nuevamente que no haya llegado al
 { 
 movimiento_motor();
 }
+tiempo=millis()-t0;
 }//endWhile salpicadura
+
+if (t0>0)
+{
+char buffer[50];  
+sprintf(buffer,"La salpicadura ha finalizado, en: %d",tiempo);
+Serial.println(buffer);
+}
+
 }//endif botonPresionado
 }//endWhile ciclo de ensayo
 }//endLoop
