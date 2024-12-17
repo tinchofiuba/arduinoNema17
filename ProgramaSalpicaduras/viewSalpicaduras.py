@@ -7,38 +7,103 @@ import sys
 import json
 #importo lo necesario para abrir un QFileDialog
 from PyQt5.QtWidgets import QFileDialog
+import pandas as pd
+import time
 
-
+dictDataFrame={"Nº Repeticion":[],"Velocidad":[],"Resultado":[],"Observaciones":[]}
 class GUI_Salpicaduras(QDialog, Ui_Dialog):
     def __init__(self):
-        print(os.getcwd())
+        self.dfResultados=pd.DataFrame(dictDataFrame) #creo por 1era vez un dataFrame 
         model=Model()
         super().__init__()
         self.setupUi(self)
         self.configLimitesliders("ambos")
         #prohibo que la aplicación se redimensione
         self.setFixedSize(self.size())
+        self.calibracion=None
+        self.numeroRepeticion=1
         self.comboBoxVelocidadesCalib.setEnabled(False)
-        self.comboBoxVelocidadesCalib.currentIndexChanged.connect(self.actualizarValoresPorcomboBox)
+        self.pushButtonComenzarEnsayo.setStyleSheet("color: green")
+        self.comboBoxVelocidadesCalib.currentIndexChanged.connect(self.actualizarValoresPorcomboBoxCalibracion)
         self.horizontalSliderDelayPasos.valueChanged.connect(self.configSliderDelayPasos)
         self.horizontalSliderTiempoEnsayo.valueChanged.connect(self.configSliderTiempoEnsayo)
         self.pushButtonResetDelayPasos.clicked.connect(lambda: self.configLimitesliders("delayPasos"))
         self.pushButtonResetTiempoEnsayo.clicked.connect(lambda: self.configLimitesliders("tiempoEnsayo"))
         self.pushButtonCargarConfigCalib.clicked.connect(self.cargarConfiguracion)
         self.pushButtonGuardarConfigCalib.clicked.connect(self.guardarConfiguracionCalibracion)
+        self.comboBoxVelocidadesEnsayo.currentIndexChanged.connect(self.actualizarValoresPorcomboBoxEnsayo)
+        self.lineEditMuestra.textChanged.connect(self.chequeoDatosInicioEnsayo)
+        self.lineEditNumeroRepeticiones.textChanged.connect(self.seteoNumRepeticiones)
+        self.lineEditOTSOT.textChanged.connect(self.chequeoDatosInicioEnsayo)
+        self.pushButtonComenzarEnsayo.clicked.connect(self.comenzarEnsayo)
+        self.pushButtonAceptarResultado.clicked.connect(self.aceptarResultado)
+        self.radioButtonFalla.toggled.connect(self.actualizacionRadioButton)
+        self.radioButtonPasa.toggled.connect(self.actualizacionRadioButton)
+        
+        
+    def actualizacionRadioButton(self):
+        self.pushButtonAceptarResultado.setEnabled(True)
+        self.pushButtonAceptarResultado.setStyleSheet("color: green")    
     
+    def aceptarResultado(self):
+        self.pushButtonComenzarEnsayo.setText("Comenzar")
+        self.pushButtonAceptarResultado.setStyleSheet("color: gray")   
+        self.radioButtonFalla.setEnabled(False)
+        self.radioButtonPasa.setEnabled(False)
+        self.pushButtonAceptarResultado.setEnabled(False)
+        self.incrementarNumeroEnsayo()
+        #hago un delay de 1 seg
+        time.sleep(1)  #emu
+        
+    def comenzarEnsayo(self):
+        print("aca espero a que se termine el ensayo - arduino!")
+        self.radioButtonFalla.setEnabled(True)
+        self.radioButtonPasa.setEnabled(True)
+        self.pushButtonComenzarEnsayo.setText("Repetir") #esto es para que se pueda repetir y no aceptar el resultado
+        #cambio el color del texto del boton pushbuttonComenzarEnsayo a rojo
+        self.pushButtonComenzarEnsayo.setStyleSheet("color: red")
+        if self.radioButtonFalla.isChecked() or self.radioButtonPasa.isChecked():
+           self.actualizacionRadioButton()
+            
+    def incrementarNumeroEnsayo(self): #cuando se acepta el ensayo se le suma 1 al numero de repeticiones
+        self.numeroRepeticion+=1
+        self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')  
+        
+    def actualizarDataFrameResultados(self):
+        print("actualizar el DF")
+              
+    def seteoNumRepeticiones(self):
+        if self.lineEditNumeroRepeticiones.text()!="":
+            self.numeroDeRepeticiones=int(self.lineEditNumeroRepeticiones.text())
+            self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')
+            self.chequeoDatosInicioEnsayo()
     
+    def chequeoDatosInicioEnsayo(self):
+        if self.lineEditMuestra.text()=="" or self.lineEditNumeroRepeticiones.text()=="" or self.lineEditOTSOT.text()=="": #si no se relleno algun lineEdit
+            self.pushButtonComenzarEnsayo.setEnabled(False)
+        else:
+            self.pushButtonComenzarEnsayo.setEnabled(True)
+
+    def actualizarValoresPorcomboBoxEnsayo(self):
+        if self.comboBoxVelocidadesEnsayo.currentText()=="": #cargo por primera vez
+            self.comboBoxVelocidadesEnsayo.setEnabled(True)
+            self.comboBoxVelocidadesEnsayo.addItems(self.calibracion.keys())
+            self.chequeoDatosInicioEnsayo()
+            self.lineEditMuestra.setEnabled(True)
+            self.lineEditNumeroRepeticiones.setEnabled(True)
+            self.lineEditOTSOT.setEnabled(True)
+        
+            
     def guardarConfiguracionCalibracion(self):
         self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]=self.horizontalSliderDelayPasos.value()
         self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"]=self.horizontalSliderTiempoEnsayo.value()
         #abro un dialogo para guardar el archivo
         file = QFileDialog.getSaveFileName(self, "Guardar archivo de calibración", "", "JSON Files (*.json)")
         self.nombreArchivoCalibracion=os.path.splitext(file[0])[0]
-        print(self.nombreArchivoCalibracion)
-        print(self.calibracion)
         with open(f'{self.nombreArchivoCalibracion}.json','w') as file:
             json.dump(self.calibracion,file)
         print("archivo guardado!")
+        self.actualizarValoresPorcomboBoxEnsayo()
         
     
     def cargarConfiguracion(self):
@@ -53,18 +118,18 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                 self.pushButtonGuardarConfigCalib.setEnabled(True)
                 self.comboBoxVelocidadesCalib.clear()
                 self.comboBoxVelocidadesCalib.addItems(self.calibracion.keys())
+                self.actualizarValoresPorcomboBoxEnsayo()
                 self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
                 self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
                 print("archivo cargado")
         except:
             print("error al cargar el archivo Json, o error al leer los valores")
             
-    def actualizarValoresPorcomboBox(self):
+    def actualizarValoresPorcomboBoxCalibracion(self):
         if self.comboBoxVelocidadesCalib.currentText()!="": #esto es por que al borrar el combobox, para poblarlo con nuevos items, al ppio no va a tener items
             self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
             self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
-            
-                
+              
     def configLimitesliders(self,slider): #en función del argumento reseteo, o configuro uno/los dos sliders
         self.delayPasosMin=400
         self.delayPasosMax=2000

@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="calibracion">
     <attribute name="title">
@@ -471,7 +471,10 @@
       <string>A origen</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="pushButtonComenzar">
+    <widget class="QPushButton" name="pushButtonComenzarEnsayo">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>280</x>
@@ -485,6 +488,9 @@
      </property>
     </widget>
     <widget class="QComboBox" name="comboBoxVelocidadesEnsayo">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -513,6 +519,9 @@
      </property>
     </widget>
     <widget class="QRadioButton" name="radioButtonPasa">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -526,6 +535,9 @@
      </property>
     </widget>
     <widget class="QRadioButton" name="radioButtonFalla">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -542,7 +554,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>140</y>
+       <y>170</y>
        <width>261</width>
        <height>16</height>
       </rect>
@@ -552,6 +564,9 @@
      </property>
     </widget>
     <widget class="QPushButton" name="pushButtonAceptarResultado">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>80</x>
@@ -580,10 +595,10 @@
     <widget class="QPushButton" name="pushButtonCargarEnsayo">
      <property name="geometry">
       <rect>
-       <x>140</x>
-       <y>110</y>
+       <x>10</x>
+       <y>140</y>
        <width>111</width>
-       <height>27</height>
+       <height>31</height>
       </rect>
      </property>
      <property name="text">
@@ -591,6 +606,9 @@
      </property>
     </widget>
     <widget class="QLineEdit" name="lineEditOTSOT">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -619,6 +637,9 @@
      </property>
     </widget>
     <widget class="QLineEdit" name="lineEditMuestra">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>140</x>
@@ -657,6 +678,73 @@
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelNumeroRepeticiones">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>80</y>
+       <width>111</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Nºrepeticiones</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEditNumeroRepeticiones">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>110</y>
+       <width>113</width>
+       <height>27</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelNumeroRepeticion">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>150</y>
+       <width>71</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Repetición:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="labelValorRepeticion">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>150</y>
+       <width>31</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>n/n</string>
      </property>
     </widget>
    </widget>
