@@ -25,15 +25,30 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonResetDelayPasos.clicked.connect(lambda: self.configLimitesliders("delayPasos"))
         self.pushButtonResetTiempoEnsayo.clicked.connect(lambda: self.configLimitesliders("tiempoEnsayo"))
         self.pushButtonCargarConfigCalib.clicked.connect(self.cargarConfiguracion)
-        self.pushButtonGuardarConfigCalib.clicked.connect(self.guardarConfiguracion)
+        self.pushButtonGuardarConfigCalib.clicked.connect(self.guardarConfiguracionCalibracion)
+    
+    
+    def guardarConfiguracionCalibracion(self):
+        self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]=self.horizontalSliderDelayPasos.value()
+        self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"]=self.horizontalSliderTiempoEnsayo.value()
+        #abro un dialogo para guardar el archivo
+        file = QFileDialog.getSaveFileName(self, "Guardar archivo de calibración", "", "JSON Files (*.json)")
+        self.nombreArchivoCalibracion=os.path.splitext(file[0])[0]
+        print(self.nombreArchivoCalibracion)
+        print(self.calibracion)
+        with open(f'{self.nombreArchivoCalibracion}.json','w') as file:
+            json.dump(self.calibracion,file)
+        print("archivo guardado!")
+        
     
     def cargarConfiguracion(self):
-        file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")[0]
+        file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")
+        self.nombreArchivoCalibracion=os.path.splitext(file[0])
         print(file)
         try :
-            with open(file,'r') as file:
+            with open(file[0],'r') as data:
                 print("archivo seleccionado")
-                self.calibracion=json.load(file)
+                self.calibracion=json.load(data)
                 self.comboBoxVelocidadesCalib.setEnabled(True)
                 self.pushButtonGuardarConfigCalib.setEnabled(True)
                 self.comboBoxVelocidadesCalib.clear()
@@ -45,9 +60,10 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             print("error al cargar el archivo Json, o error al leer los valores")
             
     def actualizarValoresPorcomboBox(self):
-                self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
-                self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
-        
+        if self.comboBoxVelocidadesCalib.currentText()!="": #esto es por que al borrar el combobox, para poblarlo con nuevos items, al ppio no va a tener items
+            self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
+            self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
+            
                 
     def configLimitesliders(self,slider): #en función del argumento reseteo, o configuro uno/los dos sliders
         self.delayPasosMin=400
@@ -80,10 +96,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             self.pushButtonGuardarConfigCalib.setEnabled(True)
         else:
             self.pushButtonGuardarConfigCalib.setEnabled(False)
-            
-    def guardarConfiguracion(self):
-        print("hola")
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

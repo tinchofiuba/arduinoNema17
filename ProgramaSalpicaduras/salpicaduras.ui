@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="calibracion">
     <attribute name="title">
@@ -488,7 +488,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>130</y>
+       <y>110</y>
        <width>111</width>
        <height>27</height>
       </rect>
@@ -498,7 +498,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>100</y>
+       <y>80</y>
        <width>111</width>
        <height>20</height>
       </rect>
@@ -542,7 +542,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>170</y>
+       <y>140</y>
        <width>261</width>
        <height>16</height>
       </rect>
@@ -581,7 +581,7 @@
      <property name="geometry">
       <rect>
        <x>140</x>
-       <y>130</y>
+       <y>110</y>
        <width>111</width>
        <height>27</height>
       </rect>
@@ -650,7 +650,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>80</y>
+       <y>70</y>
        <width>261</width>
        <height>16</height>
       </rect>
