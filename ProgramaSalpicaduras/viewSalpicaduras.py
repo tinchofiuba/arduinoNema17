@@ -40,7 +40,20 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonAceptarResultado.clicked.connect(self.aceptarResultado)
         self.radioButtonFalla.toggled.connect(self.actualizacionRadioButton)
         self.radioButtonPasa.toggled.connect(self.actualizacionRadioButton)
-        
+    
+    def guardarUltimaConfiguracion(self):
+        config = {
+            "numeroRepeticion": self.numeroRepeticion,
+            "dfResultados": self.dfResultados.to_dict(),
+            # Agrega aquí cualquier otra configuración que desees guardar
+        }
+        with open("data/data.json", "w") as file:
+            json.dump(config, file)
+    
+    def closeEvent(self, event):
+        self.guardarUltimaConfiguracion()
+        event.accept()
+    
     def actualizarTabla(self):
         self.tableWidget.setRowCount(len(self.dfResultados))
         self.tableWidget.setColumnCount(len(self.dfResultados.columns))
