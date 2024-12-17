@@ -6,10 +6,11 @@ import os
 import sys
 import json
 #importo lo necesario para abrir un QFileDialog
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFileDialog,QTableWidgetItem
 import pandas as pd
 import time
-
+    
 dictDataFrame={"Nº Repeticion":[],"Velocidad":[],"Resultado":[],"Observaciones":[]}
 class GUI_Salpicaduras(QDialog, Ui_Dialog):
     def __init__(self):
@@ -40,20 +41,45 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.radioButtonFalla.toggled.connect(self.actualizacionRadioButton)
         self.radioButtonPasa.toggled.connect(self.actualizacionRadioButton)
         
-        
+    def actualizarTabla(self):
+        self.tableWidget.setRowCount(len(self.dfResultados))
+        self.tableWidget.setColumnCount(len(self.dfResultados.columns))
+        self.tableWidget.setHorizontalHeaderLabels(self.dfResultados.columns)
+        print(self.dfResultados)
+        for i in range(len(self.dfResultados)):
+            for j in range(len(self.dfResultados.columns)):
+                item = QTableWidgetItem(str(self.dfResultados.iat[i, j]))
+                if j != len(self.dfResultados.columns) - 1:  # Si no es la última columna
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)  # Deshabilitar edición
+                self.tableWidget.setItem(i, j, item)
+  
     def actualizacionRadioButton(self):
         self.pushButtonAceptarResultado.setEnabled(True)
-        self.pushButtonAceptarResultado.setStyleSheet("color: green")    
-    
+        self.pushButtonAceptarResultado.setStyleSheet("color: green")  
+            
     def aceptarResultado(self):
         self.pushButtonComenzarEnsayo.setText("Comenzar")
         self.pushButtonAceptarResultado.setStyleSheet("color: gray")   
         self.radioButtonFalla.setEnabled(False)
         self.radioButtonPasa.setEnabled(False)
         self.pushButtonAceptarResultado.setEnabled(False)
-        self.incrementarNumeroEnsayo()
+        if self.radioButtonFalla.isChecked() or self.radioButtonPasa.isChecked():
+            if self.radioButtonFalla.isChecked():
+                self.resultado="Falla"
+            else:
+                self.resultado="Pasa"
+            print(self.resultado)
+        #►agrego una fila al dataframe
+        self.nuevaFila=pd.DataFrame([{"Nº Repeticion":self.numeroRepeticion,"Velocidad":self.velocidadEnsayo,"Resultado":self.resultado,"Observaciones":"No"}])
+        self.dfResultados=pd.concat([self.dfResultados,self.nuevaFila],ignore_index=True)
+        print(self.dfResultados)
         #hago un delay de 1 seg
         time.sleep(1)  #emu
+        #aca habría que ver de recibir la señal de arduino y hacer algo.
+        self.actualizarTabla()
+        self.incrementarNumeroEnsayo()
+
+        
         
     def comenzarEnsayo(self):
         print("aca espero a que se termine el ensayo - arduino!")
@@ -63,15 +89,18 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         #cambio el color del texto del boton pushbuttonComenzarEnsayo a rojo
         self.pushButtonComenzarEnsayo.setStyleSheet("color: red")
         if self.radioButtonFalla.isChecked() or self.radioButtonPasa.isChecked():
-           self.actualizacionRadioButton()
+            self.actualizacionRadioButton()
+            if self.radioButtonFalla.isChecked():
+                self.resultado="Falla"
+            else:
+                self.resultado="Pasa"
+            print(self.resultado)
+           
             
     def incrementarNumeroEnsayo(self): #cuando se acepta el ensayo se le suma 1 al numero de repeticiones
         self.numeroRepeticion+=1
         self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')  
-        
-    def actualizarDataFrameResultados(self):
-        print("actualizar el DF")
-              
+ 
     def seteoNumRepeticiones(self):
         if self.lineEditNumeroRepeticiones.text()!="":
             self.numeroDeRepeticiones=int(self.lineEditNumeroRepeticiones.text())
@@ -92,6 +121,9 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             self.lineEditMuestra.setEnabled(True)
             self.lineEditNumeroRepeticiones.setEnabled(True)
             self.lineEditOTSOT.setEnabled(True)
+            self.velocidadEnsayo=self.comboBoxVelocidadesEnsayo.currentText()
+        else:
+            self.velocidadEnsayo=self.comboBoxVelocidadesEnsayo.currentText()
         
             
     def guardarConfiguracionCalibracion(self):
