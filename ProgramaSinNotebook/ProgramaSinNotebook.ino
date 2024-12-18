@@ -45,25 +45,25 @@ while(digitalRead(FinCarreraSup)==LOW)
 {
 digitalWrite(dir,HIGH);
 //Serial.println("Subiendo motor hasta que cierre el final de carrera");
-velocidad=2000;
+velocidad=800;
 movimiento_motor();   
   }//endWhile
 
  //empiezo cuando apreto el boton de comienzo
  if (digitalRead(BotComenzar)==HIGH)
- {Serial.println("se presionó el boton para comenzar el ensayo!!!!");
+ {//Serial.println("se presionó el boton para comenzar el ensayo!!!!");
  if(digitalRead(BotSeleccion)==HIGH)
  {
- Serial.println("bajando con delay de 800");
+ //Serial.println("bajando con delay de 800");
  velocidad=800; 
   }
  else
  {
-  Serial.println("Bajando con delay de 2000");
+  //Serial.println("Bajando con delay de 2000");
  velocidad=1600; 
   }
-  
- while(digitalRead(FinCarreraInf)==LOW)
+
+ //while(digitalRead(FinCarreraInf)==LOW)
  {
  digitalWrite(dir,LOW);
  //Serial.println("Bajando hasta que cierre el final de carrera de abajo");

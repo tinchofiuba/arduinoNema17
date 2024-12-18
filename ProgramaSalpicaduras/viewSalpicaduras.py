@@ -6,17 +6,28 @@ import os
 import sys
 import json
 #importo lo necesario para abrir un QFileDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QTimer
 from PyQt5.QtWidgets import QFileDialog,QTableWidgetItem
 import pandas as pd
 import time
-    
+import serial
+
+arduino=serial.Serial('COM8',9600)
+time.sleep(2)
+#imprimo el puerto seriel al que se conecto el arduino
+arduino.write('salpicaduraInit'.encode()) #envio un mensaje al arduino para que sepa que se vinculo con la aplicación
+
 dictDataFrame={"Nº Repeticion":[],"Velocidad":[],"Resultado":[],"Observaciones":[]}
 class GUI_Salpicaduras(QDialog, Ui_Dialog):
     def __init__(self):
+        #escribo "salpicaduraInit" para vincular con el arduino y luego leo lo que me dice el arduino con un serial.read
         self.dfResultados=pd.DataFrame(dictDataFrame) #creo por 1era vez un dataFrame 
         model=Model()
         super().__init__()
+        #actuva un qtimer para leer el puerto serial de arduino cada 1 seg
+        self.timer = QTimer(self)
+        self.timer.start(1000) 
+        self.timer.timeout.connect(self.lecturaSerialArduino)
         self.setupUi(self)
         self.configLimitesliders("ambos")
         #prohibo que la aplicación se redimensione
@@ -40,7 +51,26 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonAceptarResultado.clicked.connect(self.aceptarResultado)
         self.radioButtonFalla.toggled.connect(self.actualizacionRadioButton)
         self.radioButtonPasa.toggled.connect(self.actualizacionRadioButton)
+
     
+    def lecturaSerialArduino(self):
+        print("...esperando respuesta del arduino...")
+        while True:
+            try:
+                #me fijo si recibo algo del arduino
+                time.sleep(1)
+                if arduino.inWaiting() > 0:
+                    print("leyendo")
+                    lectura=arduino.readline().decode("utf-8").strip()
+                    if lectura == "salpicaduraInitOK":
+                        print("Equipo vinculado listo para comenzar ensayo")
+                        self.timer.stop()
+                        break
+                    else:
+                        print(arduino.readline().decode("utf-8").strip())
+            except:
+                break
+
     def guardarUltimaConfiguracion(self):
         config = {
             "numeroRepeticion": self.numeroRepeticion,
@@ -92,10 +122,12 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.actualizarTabla()
         self.incrementarNumeroEnsayo()
 
-        
-        
     def comenzarEnsayo(self):
         print("aca espero a que se termine el ensayo - arduino!")
+        velPasos=self.horizontalSliderDelayPasos.value()
+        velEnsayo=self.horizontalSliderTiempoEnsayo.value()
+        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
+        arduino.write(mensaje.encode())
         self.radioButtonFalla.setEnabled(True)
         self.radioButtonPasa.setEnabled(True)
         self.pushButtonComenzarEnsayo.setText("Repetir") #esto es para que se pueda repetir y no aceptar el resultado
@@ -145,7 +177,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         #abro un dialogo para guardar el archivo
         file = QFileDialog.getSaveFileName(self, "Guardar archivo de calibración", "", "JSON Files (*.json)")
         self.nombreArchivoCalibracion=os.path.splitext(file[0])[0]
-        with open(f'{self.nombreArchivoCalibracion}.json','w') as file:
+        with open(f'{self.direccionArchivoConfiguración}','w') as file:
             json.dump(self.calibracion,file)
         print("archivo guardado!")
         self.actualizarValoresPorcomboBoxEnsayo()
@@ -154,22 +186,23 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
     def cargarConfiguracion(self):
         file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")
         self.nombreArchivoCalibracion=os.path.splitext(file[0])
-        print(file)
-        try :
-            with open(file[0],'r') as data:
-                print("archivo seleccionado")
-                self.calibracion=json.load(data)
-                self.comboBoxVelocidadesCalib.setEnabled(True)
-                self.pushButtonGuardarConfigCalib.setEnabled(True)
-                self.comboBoxVelocidadesCalib.clear()
-                self.comboBoxVelocidadesCalib.addItems(self.calibracion.keys())
-                self.actualizarValoresPorcomboBoxEnsayo()
-                self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
-                self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
-                print("archivo cargado")
-        except:
-            print("error al cargar el archivo Json, o error al leer los valores")
-            
+        self.direccionArchivoConfiguración=self.nombreArchivoCalibracion[0]
+        if len(file[0])>0: #si se selecciono un archivo
+            try :
+                with open(file[0],'r') as data:
+                    print("archivo seleccionado")
+                    self.calibracion=json.load(data)
+                    self.comboBoxVelocidadesCalib.setEnabled(True)
+                    self.pushButtonGuardarConfigCalib.setEnabled(True)
+                    self.comboBoxVelocidadesCalib.clear()
+                    self.comboBoxVelocidadesCalib.addItems(self.calibracion.keys())
+                    self.actualizarValoresPorcomboBoxEnsayo()
+                    self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
+                    self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
+                    print("archivo cargado")
+            except:
+                print("error al cargar el archivo Json, o error al leer los valores")
+                
     def actualizarValoresPorcomboBoxCalibracion(self):
         if self.comboBoxVelocidadesCalib.currentText()!="": #esto es por que al borrar el combobox, para poblarlo con nuevos items, al ppio no va a tener items
             self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
