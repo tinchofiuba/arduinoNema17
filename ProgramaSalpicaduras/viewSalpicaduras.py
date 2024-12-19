@@ -145,7 +145,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         print("aca espero a que se termine el ensayo - arduino!")
         velPasos=self.horizontalSliderDelayPasos.value()
         velEnsayo=self.horizontalSliderTiempoEnsayo.value()
-        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}Ensayo_O_Calib'
+        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
         try:
             arduino.write(mensaje.encode())
         except:

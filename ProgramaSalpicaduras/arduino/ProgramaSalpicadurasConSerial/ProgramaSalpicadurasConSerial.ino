@@ -16,7 +16,7 @@ int velocidad,tinicial,d,velPasos,velEnsayo;
 int v_10=2800;
 int v_4=1360;
 
-bool comenzar,subir,conectado;
+bool comenzar,origen,avanzar,retroceder,conectado;
 
 void movimiento_motor(int vel)
 {
@@ -30,13 +30,14 @@ void movimientoHaciaOrigen()
 {
   while(digitalRead(FinCarreraSup)==LOW)
   {
+  //Serial.println("subiendo");
     digitalWrite(enable,LOW); //activo el motor  
     digitalWrite(dir,HIGH);
     //Serial.println("Subiendo motor hasta que cierre el final de carrera");
     movimiento_motor(800);   
    }//endWhile
    digitalWrite(enable,HIGH); //activo el motor 
-   subir=false;
+   origen=false;
 }
 
 void salpicar(int tiempoSalpicado)
@@ -53,7 +54,7 @@ void salpicar(int tiempoSalpicado)
        }
      else
        {
-        subir=true; 
+        origen=true; 
        }
    }
   }
@@ -71,7 +72,7 @@ void lecturaSerial(String condicion)
           conectado=true;
           Serial.println("salpicaduraInitOK");
         }
-       else if (conectado==true) //si no se encuentra la palabra Init, pero ya se inicializó el core, se parsea el mensaje
+       else if (conectado==true) //si no se encuentra la palabra Init, pero ya se inicializó, se parsea el mensaje
         {
           parsearMensaje(lectura);
         }
@@ -88,19 +89,40 @@ void lecturaSerial(String condicion)
   }
 
 void parsearMensaje(String msg) 
-{
-  if (msg.indexOf("velPasos")!=-1 && msg.indexOf(",velEnsayo")!=-1) //si encuentra las palabras clave en el mensaje
+{  int index1 = msg.indexOf("velPasos");
+   int index2 = msg.indexOf(",velEnsayo");
+  if (index1!=-1 && index2!=-1) //si encuentra las palabras clave en el mensaje
   {
-    int index1 = msg.indexOf("velPasos");
-    int index2 = msg.indexOf(",velEnsayo");
-    if (index1!=-1 && index2!=-1) 
-    {
       String strVelPasos=msg.substring(index1+8,index2);
       String strVelEnsayo=msg.substring(index2+10);
       velPasos=strVelPasos.toInt();
       velEnsayo=strVelEnsayo.toInt();
-      comenzar=true;
+      //comenzar=true;
     }
+  else 
+  {
+    if (msg.indexOf("origen")!=-1)
+    {
+    origen=true;
+    comenzar=true;  
+    }
+    else
+    {
+      if (msg.indexOf("avanzar")!=-1)
+        {
+        avanzar=true; 
+        comenzar=true;   
+        }
+      else
+      {
+      if (msg.indexOf("retroceder")!=-1)
+        {
+        retroceder=true;
+        comenzar=true;     
+        }
+      }
+    }
+    
   }
 }
   
@@ -111,8 +133,9 @@ void setup() {
   pinMode(enable,OUTPUT);
   digitalWrite(enable,HIGH);  
   comenzar=false;
-  subir=true;
-  comenzar=false;
+  origen=true;
+  avanzar=false;
+  retroceder=false;
   pinMode(FinCarreraSup,INPUT); //bot7
   pinMode(FinCarreraInf,INPUT); //bpot6
   pinMode(BotComenzar,INPUT);  //bot3
@@ -121,7 +144,7 @@ void setup() {
 
 void loop() {
 //entro al loop que me posibilita mover el psito hacia arriba
-if (subir==true)
+if (origen==true)
 {
  //Serial.println("sub");
  movimientoHaciaOrigen();
@@ -129,13 +152,16 @@ if (subir==true)
 //Serial.println("-");
  lecturaSerial("loop");
 
- if (comenzar==true)
+ if (conectado==true)
  {
   lecturaSerial("ensayo");
   //Serial.println("assaas");
+
+  
    while (digitalRead(FinCarreraInf)==LOW)
    {  lecturaSerial("ensayo");
      //empiezo cuando apreto el boton de comienzo
+     //Serial.println("esperando a que se aprete el boton");
      if (digitalRead(BotComenzar)==HIGH)
        {//Serial.println("se presionó el boton para comenzar el ensayo!!!!");
         //Serial.println("comenzado");
@@ -146,7 +172,7 @@ if (subir==true)
     //Serial.println("No se presionó el boton para comenzar!");
    if (digitalRead(FinCarreraInf==HIGH))
    {
-   subir=true;
+   origen=true;
    }
   }
 }
