@@ -16,9 +16,9 @@ int velocidad,tinicial,d,velPasos,velEnsayo;
 int v_10=2800;
 int v_4=1360;
 
-bool comenzar,origen,avanzar,retroceder,conectado;
+bool comenzar,origen,avanzar,retroceder,lubricar;
 
-void movimiento_motor(int vel)
+void movimientoMotor(int vel)
 {
 digitalWrite(pasos,HIGH);
 delayMicroseconds(vel);
@@ -30,27 +30,34 @@ void movimientoHaciaOrigen()
 {
   while(digitalRead(FinCarreraSup)==LOW)
   {
-  //Serial.println("subiendo");
     digitalWrite(enable,LOW); //activo el motor  
     digitalWrite(dir,HIGH);
-    //Serial.println("Subiendo motor hasta que cierre el final de carrera");
-    movimiento_motor(800);   
+    movimientoMotor(800);   
    }//endWhile
    digitalWrite(enable,HIGH); //activo el motor 
-   origen=false;
 }
 
-void salpicar(int tiempoSalpicado)
+void salpicar(int tiempoSalpicado,String direccion)
 {  
+   if (direccion=="avanzar")
+   {
+   digitalWrite(dir,LOW);
+   }
+   else
+   {
+   if (direccion=="retroceder")
+   {
+   digitalWrite(dir,HIGH);
+   }
+   }
+   
    unsigned long t0=millis();
    while (millis()-t0<tiempoSalpicado)
-   {   //Serial.println("moviendo!!");
+   { 
      if (digitalRead(FinCarreraInf)==LOW)
        {
          digitalWrite(enable,LOW); //activo el motor  
-         digitalWrite(dir,LOW);
-         //Serial.println("Bajando hasta que cierre el final de carrera de abajo");
-         movimiento_motor(velPasos); 
+         movimientoMotor(velPasos); 
        }
      else
        {
@@ -59,34 +66,24 @@ void salpicar(int tiempoSalpicado)
    }
   }
 
-void lecturaSerial(String condicion)
+void lecturaSerial()
 {
  if (Serial.available() > 0) 
   {String lectura = Serial.readStringUntil('\n');
-    if (condicion=="loop")
-    {
       int i=lectura.indexOf("Init");
       if (i!=-1) //si se encuentra la palabra Init en el mensaje, se inicializa el core del programa
         {
           delay(200);
-          conectado=true;
+          //conectado=true;
           Serial.println("salpicaduraInitOK");
         }
-       else if (conectado==true) //si no se encuentra la palabra Init, pero ya se inicializó, se parsea el mensaje
+       else
         {
           parsearMensaje(lectura);
         }
-       
-    }
-     else if (condicion=="ensayo")
-     {
-       if (conectado==true)
-        {
-          parsearMensaje(lectura);
         }
-       }
-     }
-  }
+        }
+
 
 void parsearMensaje(String msg) 
 {  int index1 = msg.indexOf("velPasos");
@@ -97,29 +94,43 @@ void parsearMensaje(String msg)
       String strVelEnsayo=msg.substring(index2+10);
       velPasos=strVelPasos.toInt();
       velEnsayo=strVelEnsayo.toInt();
-      //comenzar=true;
+      //Serial.println("Se recibió las velocidades de configuración");
     }
   else 
   {
     if (msg.indexOf("origen")!=-1)
     {
     origen=true;
-    comenzar=true;  
+    //Serial.println("origen"); 
     }
     else
     {
       if (msg.indexOf("avanzar")!=-1)
         {
         avanzar=true; 
-        comenzar=true;   
+        //Serial.println("avanzar"); 
         }
       else
       {
       if (msg.indexOf("retroceder")!=-1)
         {
         retroceder=true;
-        comenzar=true;     
+        //Serial.println("retroceder");  
         }
+      if (msg.indexOf("comenzar")!=-1)
+        {
+        comenzar=true;
+        //Serial.println("comenzar");  
+        }
+      else
+      {
+      if (msg.indexOf("lubricar")!=-1)
+        {
+        lubricar=true;
+        //Serial.println("comenzar");  
+        }  
+      }
+       
       }
     }
     
@@ -143,38 +154,61 @@ void setup() {
 }
 
 void loop() {
-//entro al loop que me posibilita mover el psito hacia arriba
+lecturaSerial();
+
+
 if (origen==true)
-{
- //Serial.println("sub");
- movimientoHaciaOrigen();
-}
-//Serial.println("-");
- lecturaSerial("loop");
-
- if (conectado==true)
- {
-  lecturaSerial("ensayo");
-  //Serial.println("assaas");
-
-  
-   while (digitalRead(FinCarreraInf)==LOW)
-   {  lecturaSerial("ensayo");
-     //empiezo cuando apreto el boton de comienzo
-     //Serial.println("esperando a que se aprete el boton");
-     if (digitalRead(BotComenzar)==HIGH)
-       {//Serial.println("se presionó el boton para comenzar el ensayo!!!!");
-        //Serial.println("comenzado");
-       velocidad=velPasos;
-       salpicar(velEnsayo);
-       digitalWrite(enable,HIGH); //activo el motor  
-      }//endif
-    //Serial.println("No se presionó el boton para comenzar!");
-   if (digitalRead(FinCarreraInf==HIGH))
-   {
-   origen=true;
-   }
+  {
+   //Serial.println("subiendo"); //para debug
+   movimientoHaciaOrigen();
+   //Serial.println("subido y en posicion"); //para debug
+   origen=false;
   }
+
+
+if (avanzar==true)
+{
+  velocidad=800; //velocidad de avance
+  salpicar(200,"avanzar"); 
+  avanzar=false;
+}
+
+
+if (retroceder==true)
+{
+  velocidad=800; //velocidad de avance
+  salpicar(200,"retroceder"); 
+  retroceder=false;
+}
+
+
+if (comenzar==true)
+{
+  //Serial.println("comenzando ensayo");
+  velocidad=velPasos;
+  salpicar(velEnsayo,"avanzar");
+  digitalWrite(enable,HIGH); //activo el motor  
+  //Serial.println("Ensayo finalizado"); //debug
+  comenzar=false;
+}
+
+if (lubricar==true)
+{ lubricar=false;
+  for(byte i=0;i<2;i++)
+    {
+    digitalWrite(enable,LOW);
+    digitalWrite(dir,LOW);
+    while(digitalRead(FinCarreraInf)==LOW)
+    {
+    movimientoMotor(800);
+    }
+    digitalWrite(dir,HIGH);
+    while(digitalRead(FinCarreraSup)==LOW)
+    {
+    movimientoMotor(800);
+    }
+    }
+    digitalWrite(enable,HIGH);
 }
 
 

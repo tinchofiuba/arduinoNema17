@@ -65,6 +65,28 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonComenzarEnsayo.clicked.connect(self.comenzarEnsayo)
         self.pushButtonComenzarCalibracion.clicked.connect(self.comenzarEnsayo)
 
+    def comenzarEnsayo(self):
+        print("aca espero a que se termine el ensayo - arduino!")
+        velPasos=self.horizontalSliderDelayPasos.value()
+        velEnsayo=self.horizontalSliderTiempoEnsayo.value()
+        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
+        try:
+            arduino.write(mensaje.encode())
+        except:
+            print("No se pudo enviar el mensaje al arduino")
+        self.radioButtonFalla.setEnabled(True)
+        self.radioButtonPasa.setEnabled(True)
+        self.pushButtonComenzarEnsayo.setText("Repetir") #esto es para que se pueda repetir y no aceptar el resultado
+        #cambio el color del texto del boton pushbuttonComenzarEnsayo a rojo
+        self.pushButtonComenzarEnsayo.setStyleSheet("color: red")
+        if self.radioButtonFalla.isChecked() or self.radioButtonPasa.isChecked():
+            self.actualizacionRadioButton()
+            if self.radioButtonFalla.isChecked():
+                self.resultado="Falla"
+            else:
+                self.resultado="Pasa"
+            print(self.resultado)
+
     def configPosicionPiston(self,mje):
         try:
             mensaje=mje
