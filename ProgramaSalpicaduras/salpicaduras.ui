@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>403</width>
+    <height>306</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>10</x>
      <y>10</y>
      <width>381</width>
-     <height>281</height>
+     <height>291</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -149,7 +149,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>90</y>
+       <y>80</y>
        <width>361</width>
        <height>21</height>
       </rect>
@@ -263,7 +263,7 @@
      <property name="geometry">
       <rect>
        <x>280</x>
-       <y>160</y>
+       <y>140</y>
        <width>88</width>
        <height>27</height>
       </rect>
@@ -276,7 +276,7 @@
      <property name="geometry">
       <rect>
        <x>300</x>
-       <y>110</y>
+       <y>90</y>
        <width>71</width>
        <height>20</height>
       </rect>
@@ -297,7 +297,7 @@
      <property name="geometry">
       <rect>
        <x>280</x>
-       <y>190</y>
+       <y>170</y>
        <width>88</width>
        <height>27</height>
       </rect>
@@ -313,7 +313,7 @@
      <property name="geometry">
       <rect>
        <x>280</x>
-       <y>130</y>
+       <y>110</y>
        <width>88</width>
        <height>27</height>
       </rect>
@@ -329,7 +329,7 @@
      <property name="geometry">
       <rect>
        <x>280</x>
-       <y>220</y>
+       <y>230</y>
        <width>88</width>
        <height>27</height>
       </rect>
@@ -344,7 +344,7 @@
        <x>260</x>
        <y>10</y>
        <width>20</width>
-       <height>231</height>
+       <height>241</height>
       </rect>
      </property>
      <property name="orientation">
@@ -355,7 +355,7 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>140</y>
+       <y>130</y>
        <width>111</width>
        <height>27</height>
       </rect>
@@ -365,7 +365,7 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>110</y>
+       <y>100</y>
        <width>111</width>
        <height>20</height>
       </rect>
@@ -382,9 +382,9 @@
     <widget class="QLabel" name="labelMotor_4">
      <property name="geometry">
       <rect>
-       <x>290</x>
+       <x>280</x>
        <y>10</y>
-       <width>71</width>
+       <width>101</width>
        <height>20</height>
       </rect>
      </property>
@@ -394,7 +394,7 @@
       </font>
      </property>
      <property name="text">
-      <string>ENSAYO</string>
+      <string>CALIBRACION</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButtonGuardarConfigCalib">
@@ -415,7 +415,7 @@
     </widget>
     <widget class="QPushButton" name="pushButtonCargarConfigCalib">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
@@ -427,6 +427,22 @@
      </property>
      <property name="text">
       <string>Cargar</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButtonLubricar">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>200</y>
+       <width>88</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Lubricar</string>
      </property>
     </widget>
    </widget>
@@ -601,7 +617,7 @@
        <x>260</x>
        <y>10</y>
        <width>20</width>
-       <height>231</height>
+       <height>241</height>
       </rect>
      </property>
      <property name="orientation">

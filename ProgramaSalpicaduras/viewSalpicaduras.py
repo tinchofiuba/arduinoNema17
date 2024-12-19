@@ -6,7 +6,7 @@ import os
 import sys
 import json
 #importo lo necesario para abrir un QFileDialog
-from PyQt5.QtCore import Qt,QTimer
+from PyQt5.QtCore import Qt,QTimer,QThread,pyqtSignal
 from PyQt5.QtWidgets import QFileDialog,QTableWidgetItem
 import pandas as pd
 import time
@@ -15,6 +15,7 @@ import serial
 try:
     arduino=serial.Serial('COM8',9600)
     time.sleep(2)
+    print(f"Conectado al puerto {arduino.port}")
     #imprimo el puerto seriel al que se conecto el arduino
     arduino.write('salpicaduraInit'.encode()) #envio un mensaje al arduino para que sepa que se vinculo con la aplicación
 except:
@@ -27,14 +28,16 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.dfResultados=pd.DataFrame(dictDataFrame) #creo por 1era vez un dataFrame 
         model=Model()
         super().__init__()
-        #actuva un qtimer para leer el puerto serial de arduino cada 1 seg
-        #self.timer = QTimer(self)
-        #self.timer.start(1000) 
-        #self.timer.timeout.connect(self.lecturaSerialArduino)
+        
+        self.timer = QTimer(self)
+        self.timer.start(1000) 
+        self.timer.timeout.connect(self.lecturaSerialArduino)
         self.setupUi(self)
         self.configLimitesliders("ambos")
         #prohibo que la aplicación se redimensione
         self.setFixedSize(self.size())
+        self.velPasosAnt=0
+        self.velEnsayoAnt=0
         self.calibracion=None
         self.numeroRepeticion=1
         self.comboBoxVelocidadesCalib.setEnabled(False)
@@ -62,18 +65,26 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonRetrocederCalib.clicked.connect(lambda: self.configPosicionPiston("retroceder"))
         self.pushButtonOrigen.clicked.connect(lambda: self.configPosicionPiston("origen"))  
         self.pushButtonOrigenCalib.clicked.connect(lambda: self.configPosicionPiston("origen"))
+        self.pushButtonLubricar.clicked.connect(lambda: self.configPosicionPiston("lubricar"))
         self.pushButtonComenzarEnsayo.clicked.connect(self.comenzarEnsayo)
         self.pushButtonComenzarCalibracion.clicked.connect(self.comenzarEnsayo)
 
-    def comenzarEnsayo(self):
-        print("aca espero a que se termine el ensayo - arduino!")
+    def chequeoSliderComSerial(self,mje):
         velPasos=self.horizontalSliderDelayPasos.value()
         velEnsayo=self.horizontalSliderTiempoEnsayo.value()
-        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
-        try:
+        if self.velPasosAnt!=velPasos or self.velEnsayoAnt!=velEnsayo:
+            mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
+            self.velPasosAnt=velPasos
+            self.velEnsayoAnt=velEnsayo
             arduino.write(mensaje.encode())
-        except:
-            print("No se pudo enviar el mensaje al arduino")
+            time.sleep(1)
+            arduino.write(mje.encode())
+        else:
+            arduino.write(mje.encode())
+
+
+    def comenzarEnsayo(self):
+        self.chequeoSliderComSerial('comenzar')
         self.radioButtonFalla.setEnabled(True)
         self.radioButtonPasa.setEnabled(True)
         self.pushButtonComenzarEnsayo.setText("Repetir") #esto es para que se pueda repetir y no aceptar el resultado
@@ -101,7 +112,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                 #me fijo si recibo algo del arduino
                 time.sleep(1)
                 if arduino.inWaiting() > 0:
-                    print("leyendo")
+                    print("Intentando leer el mensaje del arduino")
                     lectura=arduino.readline().decode("utf-8").strip()
                     if lectura == "salpicaduraInitOK":
                         print("Equipo vinculado listo para comenzar ensayo")
@@ -161,30 +172,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         time.sleep(1)  #emu
         #aca habría que ver de recibir la señal de arduino y hacer algo.
         self.actualizarTabla()
-        self.incrementarNumeroEnsayo()
-
-    def comenzarEnsayo(self):
-        print("aca espero a que se termine el ensayo - arduino!")
-        velPasos=self.horizontalSliderDelayPasos.value()
-        velEnsayo=self.horizontalSliderTiempoEnsayo.value()
-        mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
-        try:
-            arduino.write(mensaje.encode())
-        except:
-            print("No se pudo enviar el mensaje al arduino")
-        self.radioButtonFalla.setEnabled(True)
-        self.radioButtonPasa.setEnabled(True)
-        self.pushButtonComenzarEnsayo.setText("Repetir") #esto es para que se pueda repetir y no aceptar el resultado
-        #cambio el color del texto del boton pushbuttonComenzarEnsayo a rojo
-        self.pushButtonComenzarEnsayo.setStyleSheet("color: red")
-        if self.radioButtonFalla.isChecked() or self.radioButtonPasa.isChecked():
-            self.actualizacionRadioButton()
-            if self.radioButtonFalla.isChecked():
-                self.resultado="Falla"
-            else:
-                self.resultado="Pasa"
-            print(self.resultado)
-           
+        self.incrementarNumeroEnsayo()     
             
     def incrementarNumeroEnsayo(self): #cuando se acepta el ensayo se le suma 1 al numero de repeticiones
         self.numeroRepeticion+=1
@@ -199,8 +187,17 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
     def chequeoDatosInicioEnsayo(self):
         if self.lineEditMuestra.text()=="" or self.lineEditNumeroRepeticiones.text()=="" or self.lineEditOTSOT.text()=="": #si no se relleno algun lineEdit
             self.pushButtonComenzarEnsayo.setEnabled(False)
+            self.pushButtonAvanzar.setEnabled(False)
+            self.pushButtonRetroceder.setEnabled(False)
+            self.pushButtonOrigen.setEnabled(False)
+            self.pushButtonLubricar.setEnabled(False)
         else:
             self.pushButtonComenzarEnsayo.setEnabled(True)
+            self.pushButtonAvanzar.setEnabled(True)
+            self.pushButtonRetroceder.setEnabled(True)
+            self.pushButtonOrigen.setEnabled(True)
+            self.pushButtonLubricar.setEnabled(True)
+
 
     def actualizarValoresPorcomboBoxEnsayo(self):
         if self.comboBoxVelocidadesEnsayo.currentText()=="": #cargo por primera vez
