@@ -42,8 +42,6 @@ void movimientoHaciaOrigen()
 void salpicar(int tiempoSalpicado)
 {  
    unsigned long t0=millis();
-   //Serial.println(t0);
-   //Serial.println(millis()-t0);
    while (millis()-t0<tiempoSalpicado)
    {   //Serial.println("moviendo!!");
      if (digitalRead(FinCarreraInf)==LOW)
@@ -67,13 +65,13 @@ void lecturaSerial(String condicion)
     if (condicion=="loop")
     {
       int i=lectura.indexOf("Init");
-      if (i!=-1)
+      if (i!=-1) //si se encuentra la palabra Init en el mensaje, se inicializa el core del programa
         {
           delay(200);
           conectado=true;
           Serial.println("salpicaduraInitOK");
         }
-       else if (conectado==true)
+       else if (conectado==true) //si no se encuentra la palabra Init, pero ya se inicializó el core, se parsea el mensaje
         {
           parsearMensaje(lectura);
         }
@@ -91,20 +89,20 @@ void lecturaSerial(String condicion)
 
 void parsearMensaje(String msg) 
 {
-  int index1 = msg.indexOf("velPasos");
-  int index2 = msg.indexOf(",velEnsayo");
-  
-  if (index1 != -1 && index2 != -1) {
-    String strVelPasos = msg.substring(index1 + 8, index2);
-    String strVelEnsayo = msg.substring(index2 + 10);
-    
-    velPasos = strVelPasos.toInt();
-    velEnsayo = strVelEnsayo.toInt();
-    //Serial.println(velPasos);
-    //Serial.println(velEnsayo);
-    comenzar=true;
+  if (msg.indexOf("velPasos")!=-1 && msg.indexOf(",velEnsayo")!=-1) //si encuentra las palabras clave en el mensaje
+  {
+    int index1 = msg.indexOf("velPasos");
+    int index2 = msg.indexOf(",velEnsayo");
+    if (index1!=-1 && index2!=-1) 
+    {
+      String strVelPasos=msg.substring(index1+8,index2);
+      String strVelEnsayo=msg.substring(index2+10);
+      velPasos=strVelPasos.toInt();
+      velEnsayo=strVelEnsayo.toInt();
+      comenzar=true;
+    }
   }
-  }
+}
   
 void setup() {
   Serial.begin(9600);
