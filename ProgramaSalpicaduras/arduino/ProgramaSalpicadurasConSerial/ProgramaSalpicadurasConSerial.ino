@@ -27,7 +27,7 @@ delayMicroseconds(vel);
 }
   
 void movimientoHaciaOrigen()
-{
+{Serial.println("hacia origen");
   while(digitalRead(FinCarreraSup)==LOW)
   {
     digitalWrite(enable,LOW); //activo el motor  
@@ -184,7 +184,7 @@ if (retroceder==true)
 
 if (comenzar==true)
 {
-  //Serial.println("comenzando ensayo");
+  Serial.println("comenzando ensayo");
   velocidad=velPasos;
   salpicar(velEnsayo,"avanzar");
   digitalWrite(enable,HIGH); //activo el motor  

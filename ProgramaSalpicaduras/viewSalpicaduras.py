@@ -6,20 +6,49 @@ import os
 import sys
 import json
 #importo lo necesario para abrir un QFileDialog
-from PyQt5.QtCore import Qt,QTimer,QThread,pyqtSignal
+from PyQt5.QtCore import Qt,QThread,pyqtSignal
 from PyQt5.QtWidgets import QFileDialog,QTableWidgetItem
 import pandas as pd
 import time
 import serial
 
-try:
-    arduino=serial.Serial('COM8',9600)
-    time.sleep(2)
-    print(f"Conectado al puerto {arduino.port}")
-    #imprimo el puerto seriel al que se conecto el arduino
-    arduino.write('salpicaduraInit'.encode()) #envio un mensaje al arduino para que sepa que se vinculo con la aplicación
-except:
-    print("No se pudo conectar con el arduino")
+
+from PyQt5.QtCore import QThread, pyqtSignal
+import serial
+import time
+
+class SerialThread(QThread):
+
+    def __init__(self, puerto, bauds):
+        super().__init__()
+        self.puerto=puerto
+        self.bauds=bauds
+        self.running=True
+
+    def run(self):
+        try:
+            self.arduino=serial.Serial(self.puerto, self.bauds)
+            time.sleep(1)
+            self.arduino.write('salpicaduraInit'.encode())
+            while self.running:
+                if self.arduino.in_waiting > 0:
+                    datos=self.arduino.readline().decode("utf-8").strip()
+                    print("Leyendo el mensaje del arduino")
+                    if datos=="salpicaduraInitOK":
+                        print("Equipo conectado correctamente")
+        except Exception as e:
+            print(f"Error: {e}")
+
+    def enviarMje(self, mje):
+        try:
+            self.arduino.write(mje.encode())
+        except Exception as e:
+            print(f"Error sending message: {e}")
+
+    def stop(self):
+        self.running = False
+        self.wait()
+        self.arduino.close()
 
 dictDataFrame={"Nº Repeticion":[],"Velocidad":[],"Resultado":[],"Observaciones":[]}
 class GUI_Salpicaduras(QDialog, Ui_Dialog):
@@ -29,12 +58,13 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         model=Model()
         super().__init__()
         
-        self.timer = QTimer(self)
-        self.timer.start(1000) 
-        self.timer.timeout.connect(self.lecturaSerialArduino)
+        #self.timer = QTimer(self)
+        #self.timer.start(1000) 
+        #self.timer.timeout.connect(self.lecturaSerialArduino)
+        self.serialThread=SerialThread('COM8', 9600)
+        self.serialThread.start()
         self.setupUi(self)
-        self.configLimitesliders("ambos")
-        #prohibo que la aplicación se redimensione
+        self.configLimitesliders("init","ambos")
         self.setFixedSize(self.size())
         self.velPasosAnt=0
         self.velEnsayoAnt=0
@@ -45,8 +75,8 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.comboBoxVelocidadesCalib.currentIndexChanged.connect(self.actualizarValoresPorcomboBoxCalibracion)
         self.horizontalSliderDelayPasos.valueChanged.connect(self.configSliderDelayPasos)
         self.horizontalSliderTiempoEnsayo.valueChanged.connect(self.configSliderTiempoEnsayo)
-        self.pushButtonResetDelayPasos.clicked.connect(lambda: self.configLimitesliders("delayPasos"))
-        self.pushButtonResetTiempoEnsayo.clicked.connect(lambda: self.configLimitesliders("tiempoEnsayo"))
+        self.pushButtonResetDelayPasos.clicked.connect(lambda: self.configLimitesliders("rst","delayPasos"))
+        self.pushButtonResetTiempoEnsayo.clicked.connect(lambda: self.configLimitesliders("rst","tiempoEnsayo"))
         self.pushButtonCargarConfigCalib.clicked.connect(self.cargarConfiguracion)
         self.pushButtonGuardarConfigCalib.clicked.connect(self.guardarConfiguracionCalibracion)
         self.comboBoxVelocidadesEnsayo.currentIndexChanged.connect(self.actualizarValoresPorcomboBoxEnsayo)
@@ -76,11 +106,13 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
             self.velPasosAnt=velPasos
             self.velEnsayoAnt=velEnsayo
-            arduino.write(mensaje.encode())
+            self.serialThread.enviarMje(mensaje)
             time.sleep(1)
-            arduino.write(mje.encode())
-        else:
-            arduino.write(mje.encode())
+            self.serialThread.enviarMje(mje)
+            print("se envia configuracion de velocidad, por 1era vez")
+
+        else: #si no cambio la velocidad de los sliders, no envio esta información
+            self.serialThread.enviarMje(mje)
 
 
     def comenzarEnsayo(self):
@@ -100,28 +132,9 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
 
     def configPosicionPiston(self,mje):
         try:
-            mensaje=mje
-            arduino.write(mensaje.encode())    
+            self.serialThread.enviarMje(mje)
         except:
             print("No se pudo enviar el mensaje al arduino")
-
-    def lecturaSerialArduino(self):
-        print("...esperando respuesta del arduino...")
-        while True:
-            try:
-                #me fijo si recibo algo del arduino
-                time.sleep(1)
-                if arduino.inWaiting() > 0:
-                    print("Intentando leer el mensaje del arduino")
-                    lectura=arduino.readline().decode("utf-8").strip()
-                    if lectura == "salpicaduraInitOK":
-                        print("Equipo vinculado listo para comenzar ensayo")
-                        self.timer.stop()
-                        break
-                    else:
-                        print(arduino.readline().decode("utf-8").strip())
-            except:
-                break
 
     def guardarUltimaConfiguracion(self): #para guardar un json con la última configuación, así se haya o no calibrado, pero no se guarda la calibración
         config = {
@@ -164,13 +177,9 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             else:
                 self.resultado="Pasa"
             print(self.resultado)
-        #►agrego una fila al dataframe
         self.nuevaFila=pd.DataFrame([{"Nº Repeticion":self.numeroRepeticion,"Velocidad":self.velocidadEnsayo,"Resultado":self.resultado,"Observaciones":"No"}])
         self.dfResultados=pd.concat([self.dfResultados,self.nuevaFila],ignore_index=True)
         print(self.dfResultados)
-        #hago un delay de 1 seg
-        time.sleep(1)  #emu
-        #aca habría que ver de recibir la señal de arduino y hacer algo.
         self.actualizarTabla()
         self.incrementarNumeroEnsayo()     
             
@@ -190,7 +199,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             self.pushButtonAvanzar.setEnabled(False)
             self.pushButtonRetroceder.setEnabled(False)
             self.pushButtonOrigen.setEnabled(False)
-            self.pushButtonLubricar.setEnabled(False)
         else:
             self.pushButtonComenzarEnsayo.setEnabled(True)
             self.pushButtonAvanzar.setEnabled(True)
@@ -236,7 +244,14 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         if len(file[0])>0: #si se selecciono un archivo
             try :
                 with open(file[0],'r') as data:
-                    print("archivo seleccionado")
+                    print("configuración levantada")
+                    self.horizontalSliderDelayPasos.setEnabled(True)
+                    self.horizontalSliderTiempoEnsayo.setEnabled(True)
+                    self.pushButtonAvanzarCalib.setEnabled(True)
+                    self.pushButtonRetrocederCalib.setEnabled(True)
+                    self.pushButtonOrigenCalib.setEnabled(True)
+                    self.pushButtonLubricar.setEnabled(True)
+                    self.pushButtonComenzarCalibracion.setEnabled(True)
                     self.calibracion=json.load(data)
                     self.comboBoxVelocidadesCalib.setEnabled(True)
                     self.pushButtonGuardarConfigCalib.setEnabled(True)
@@ -247,7 +262,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                     self.tiempoEnsayo=self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"]
                     self.horizontalSliderDelayPasos.setValue(self.delayPasos) 
                     self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo)
-                    print("archivo cargado")
             except:
                 print("error al cargar el archivo Json, o error al leer los valores")
                 
@@ -256,27 +270,37 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
             self.horizontalSliderTiempoEnsayo.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"])
               
-    def configLimitesliders(self,slider): #en función del argumento reseteo, o configuro uno/los dos sliders
+    def configLimitesliders(self,config,slider): #en función del argumento reseteo, o configuro uno/los dos sliders
         self.delayPasosMin=400
         self.delayPasosMax=2000
         self.tiempoEnsayoMin=400
         self.tiempoEnsayoMax=1000
-        if slider=="ambos":
-            self.horizontalSliderDelayPasos.setMinimum(self.delayPasosMin) #valor del tiempo en microSegundos
-            self.horizontalSliderDelayPasos.setMaximum(self.delayPasosMax) #valor del tiempo en microSegundos
-            self.horizontalSliderDelayPasos.setValue(self.delayPasos) #seteo el valor por default de la ultima config
-            self.horizontalSliderTiempoEnsayo.setMinimum(self.tiempoEnsayoMin) #valor del tiempo en milisegundos
-            self.horizontalSliderTiempoEnsayo.setMaximum(self.tiempoEnsayoMax) #valor del tiempo en milisegundos
-            self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
-        elif slider=="delayPasos":
-            self.horizontalSliderDelayPasos.setvalue(self.delayPasosMin) #valor del tiempo en microSegundos
-            self.horizontalSliderDelayPasos.setMaximum(self.delayPasosMax) #valor del tiempo en microSegundos
-        else :
-            self.horizontalSliderTiempoEnsayo.setMinimum(self.tiempoEnsayoMin) #valor del tiempo en milisegundos
-            self.horizontalSliderTiempoEnsayo.setMaximum(self.tiempoEnsayoMax) #valor del tiempo en milisegundos
+        if config=="init":
+            if slider=="ambos":
+                self.horizontalSliderDelayPasos.setMinimum(self.delayPasosMin) #valor del tiempo en microSegundos
+                self.horizontalSliderDelayPasos.setMaximum(self.delayPasosMax) #valor del tiempo en microSegundos
+                self.horizontalSliderTiempoEnsayo.setMinimum(self.tiempoEnsayoMin) #valor del tiempo en milisegundos
+                self.horizontalSliderTiempoEnsayo.setMaximum(self.tiempoEnsayoMax) #valor del tiempo en milisegundos
+        if config=="rst":
+            if slider=="ambos":
+                self.horizontalSliderDelayPasos.setValue(self.delayPasos) #seteo el valor por default de la ultima config
+                self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
+            elif slider=="delayPasos":
+                self.horizontalSliderDelayPasos.setValue(self.delayPasos) #seteo el valor por default de la ultima config
+            else :
+                self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
     
     def configSliderDelayPasos(self):
         self.labelValorDelayPasos.setText(str(self.horizontalSliderDelayPasos.value()))
+        mCalibracion=-0.0028
+        bCalibracion=5.9673
+        caudal=mCalibracion*self.horizontalSliderDelayPasos.value()+bCalibracion #caudal aproximado
+        diametroInterno=0.08 #en mm
+        area=(3.1416*(diametroInterno**2))/4 
+        velocidad=caudal/area
+        volumenDescargado=caudal*self.horizontalSliderTiempoEnsayo.value()/1000
+        self.hor
+
         self.verificacionGuardarConfiguracion()
         
     def configSliderTiempoEnsayo(self):
