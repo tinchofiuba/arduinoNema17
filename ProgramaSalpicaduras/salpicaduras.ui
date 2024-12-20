@@ -229,9 +229,9 @@
     <widget class="QLabel" name="labelValorCaudalDeDescarga">
      <property name="geometry">
       <rect>
-       <x>190</x>
+       <x>180</x>
        <y>210</y>
-       <width>31</width>
+       <width>81</width>
        <height>20</height>
       </rect>
      </property>
@@ -249,7 +249,7 @@
       <rect>
        <x>190</x>
        <y>240</y>
-       <width>31</width>
+       <width>71</width>
        <height>20</height>
       </rect>
      </property>

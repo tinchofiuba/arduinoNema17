@@ -100,20 +100,21 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonComenzarCalibracion.clicked.connect(self.comenzarEnsayo)
 
     def chequeoSliderComSerial(self,mje):
-        velPasos=self.horizontalSliderDelayPasos.value()
-        velEnsayo=self.horizontalSliderTiempoEnsayo.value()
-        if self.velPasosAnt!=velPasos or self.velEnsayoAnt!=velEnsayo:
+        velocidadSeleccionadaEnsayo=self.comboBoxVelocidadesEnsayo.currentText()
+        velPasos=self.calibracion[velocidadSeleccionadaEnsayo]["delayPasos"]
+        velEnsayo=self.calibracion[velocidadSeleccionadaEnsayo]["tiempoEnsayo"]
+        if self.velPasosAnt!=velPasos or self.velEnsayoAnt!=velEnsayo: #mando solamente si se cambio la velocidad
             mensaje=f'velPasos{velPasos},velEnsayo{velEnsayo}'
             self.velPasosAnt=velPasos
             self.velEnsayoAnt=velEnsayo
             self.serialThread.enviarMje(mensaje)
-            time.sleep(1)
+            time.sleep(2)
             self.serialThread.enviarMje(mje)
-            print("se envia configuracion de velocidad, por 1era vez")
-
-        else: #si no cambio la velocidad de los sliders, no envio esta información
+        else:
             self.serialThread.enviarMje(mje)
 
+        #else: #si no cambio la velocidad de los sliders, no envio esta información
+         #   self.serialThread.enviarMje(mje)
 
     def comenzarEnsayo(self):
         self.chequeoSliderComSerial('comenzar')
@@ -295,12 +296,12 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         mCalibracion=-0.0028
         bCalibracion=5.9673
         caudal=mCalibracion*self.horizontalSliderDelayPasos.value()+bCalibracion #caudal aproximado
-        diametroInterno=0.08 #en mm
+        diametroInterno=0.08 
         area=(3.1416*(diametroInterno**2))/4 
         velocidad=caudal/area
         volumenDescargado=caudal*self.horizontalSliderTiempoEnsayo.value()/1000
-        self.hor
-
+        self.labelValorCaudalDeDescarga.setText(f'{caudal:.2f} ml/s')
+        self.labelValorVelocidadDeDescarga.setText(f'{velocidad:.2f} cm/s')
         self.verificacionGuardarConfiguracion()
         
     def configSliderTiempoEnsayo(self):

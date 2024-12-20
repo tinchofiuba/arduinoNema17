@@ -27,7 +27,7 @@ delayMicroseconds(vel);
 }
   
 void movimientoHaciaOrigen()
-{Serial.println("hacia origen");
+{//Serial.println("hacia origen");
   while(digitalRead(FinCarreraSup)==LOW)
   {
     digitalWrite(enable,LOW); //activo el motor  
@@ -73,7 +73,7 @@ void lecturaSerial()
       int i=lectura.indexOf("Init");
       if (i!=-1) //si se encuentra la palabra Init en el mensaje, se inicializa el core del programa
         {
-          delay(200);
+          delay(50);
           //conectado=true;
           Serial.println("salpicaduraInitOK");
         }
@@ -184,7 +184,7 @@ if (retroceder==true)
 
 if (comenzar==true)
 {
-  Serial.println("comenzando ensayo");
+  //Serial.println("comenzando ensayo");
   velocidad=velPasos;
   salpicar(velEnsayo,"avanzar");
   digitalWrite(enable,HIGH); //activo el motor  
