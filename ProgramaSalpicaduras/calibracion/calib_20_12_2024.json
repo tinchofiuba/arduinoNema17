@@ -1,0 +1,14 @@
+{
+    "700": {
+        "delayPasos": 1195,
+        "tiempoEnsayo": 831
+    },
+    "600": {
+        "delayPasos": 1345,
+        "tiempoEnsayo": 600
+    },
+    "480": {
+        "delayPasos": 700,
+        "tiempoEnsayo": 600
+    }
+}

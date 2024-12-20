@@ -217,12 +217,15 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.tiempoEnsayo=self.horizontalSliderTiempoEnsayo.value()
         self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]=self.delayPasos
         self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"]=self.tiempoEnsayo
-        #abro un dialogo para guardar el archivo
-        file = QFileDialog.getSaveFileName(self, "Guardar archivo de calibración", "", "JSON Files (*.json)")
-        self.nombreArchivoCalibracion=os.path.splitext(file[0])[0]
-        with open(f'{self.direccionArchivoConfiguración}','w') as file:
-            json.dump(self.calibracion,file)
-        print("archivo guardado!")
+        file, _ = QFileDialog.getSaveFileName(self, "Guardar archivo de calibración", "", "JSON Files (*.json)")
+        if file:
+            if not file.endswith('.json'):
+                file+='.json'
+            with open(file,'w') as f:
+                json.dump(self.calibracion,f,indent=4)
+            print("Archivo guardado:",file)
+        else:
+            print("No se seleccionó ningún archivo")
         self.actualizarValoresPorcomboBoxEnsayo()
         
     
@@ -261,8 +264,10 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         if slider=="ambos":
             self.horizontalSliderDelayPasos.setMinimum(self.delayPasosMin) #valor del tiempo en microSegundos
             self.horizontalSliderDelayPasos.setMaximum(self.delayPasosMax) #valor del tiempo en microSegundos
+            self.horizontalSliderDelayPasos.setValue(self.delayPasos) #seteo el valor por default de la ultima config
             self.horizontalSliderTiempoEnsayo.setMinimum(self.tiempoEnsayoMin) #valor del tiempo en milisegundos
             self.horizontalSliderTiempoEnsayo.setMaximum(self.tiempoEnsayoMax) #valor del tiempo en milisegundos
+            self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
         elif slider=="delayPasos":
             self.horizontalSliderDelayPasos.setvalue(self.delayPasosMin) #valor del tiempo en microSegundos
             self.horizontalSliderDelayPasos.setMaximum(self.delayPasosMax) #valor del tiempo en microSegundos

@@ -21,6 +21,7 @@ class Ui_Dialog(object):
         self.calibracion = QtWidgets.QWidget()
         self.calibracion.setObjectName("calibracion")
         self.horizontalSliderDelayPasos = QtWidgets.QSlider(self.calibracion)
+        self.horizontalSliderDelayPasos.setEnabled(False)
         self.horizontalSliderDelayPasos.setGeometry(QtCore.QRect(50, 20, 160, 16))
         self.horizontalSliderDelayPasos.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSliderDelayPasos.setObjectName("horizontalSliderDelayPasos")
@@ -32,6 +33,7 @@ class Ui_Dialog(object):
         self.labelVelocidad_3.setText("")
         self.labelVelocidad_3.setObjectName("labelVelocidad_3")
         self.horizontalSliderTiempoEnsayo = QtWidgets.QSlider(self.calibracion)
+        self.horizontalSliderTiempoEnsayo.setEnabled(False)
         self.horizontalSliderTiempoEnsayo.setGeometry(QtCore.QRect(50, 60, 160, 16))
         self.horizontalSliderTiempoEnsayo.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSliderTiempoEnsayo.setObjectName("horizontalSliderTiempoEnsayo")
@@ -306,7 +308,7 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.resultados, "")
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):

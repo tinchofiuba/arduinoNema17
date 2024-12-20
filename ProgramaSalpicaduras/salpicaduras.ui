@@ -23,13 +23,16 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="calibracion">
     <attribute name="title">
      <string>Calibracion</string>
     </attribute>
     <widget class="QSlider" name="horizontalSliderDelayPasos">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>50</x>
@@ -61,6 +64,9 @@
      </property>
     </widget>
     <widget class="QSlider" name="horizontalSliderTiempoEnsayo">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>50</x>

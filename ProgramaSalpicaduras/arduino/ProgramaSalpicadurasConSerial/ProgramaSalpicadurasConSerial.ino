@@ -193,7 +193,7 @@ if (comenzar==true)
 }
 
 if (lubricar==true)
-{ lubricar=false;
+{lubricar=false;
   for(byte i=0;i<2;i++)
     {
     digitalWrite(enable,LOW);
