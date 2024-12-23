@@ -18,6 +18,26 @@ int v_4=1360;
 
 bool comenzar,origen,avanzar,retroceder,lubricar;
 
+void lubricarEje()
+{
+lubricar=false;
+  for(byte i=0;i<2;i++)
+    {
+    digitalWrite(enable,LOW);
+    digitalWrite(dir,LOW);
+    while(digitalRead(FinCarreraInf)==LOW)
+    {
+    movimientoMotor(800);
+    }
+    digitalWrite(dir,HIGH);
+    while(digitalRead(FinCarreraSup)==LOW)
+    {
+    movimientoMotor(800);
+    }
+    }
+    digitalWrite(enable,HIGH);
+}
+
 void movimientoMotor(int vel)
 {
 digitalWrite(pasos,HIGH);
@@ -25,7 +45,7 @@ delayMicroseconds(vel);
 digitalWrite(pasos,LOW);
 delayMicroseconds(vel);    
 }
-  
+
 void movimientoHaciaOrigen()
 {//Serial.println("hacia origen");
   while(digitalRead(FinCarreraSup)==LOW)
@@ -33,37 +53,46 @@ void movimientoHaciaOrigen()
     digitalWrite(enable,LOW); //activo el motor  
     digitalWrite(dir,HIGH);
     movimientoMotor(800);   
-   }//endWhile
+   }
    digitalWrite(enable,HIGH); //activo el motor 
 }
 
-void salpicar(int tiempoSalpicado,String direccion)
+void salpicar(int tiempoSalpicado,int vel,String direccion)
 {  
    if (direccion=="avanzar")
-   {
-   digitalWrite(dir,LOW);
-   }
+     {
+     digitalWrite(dir,LOW);
+     unsigned long t0=millis();
+     while (millis()-t0<tiempoSalpicado)
+       { 
+         if (digitalRead(FinCarreraInf)==LOW)
+           {
+             digitalWrite(enable,LOW); //activo el motor  
+             movimientoMotor(vel); 
+           }
+         else
+           {
+            origen=true; 
+           }
+       }
+     
+     }
    else
    {
-   if (direccion=="retroceder")
-   {
-   digitalWrite(dir,HIGH);
-   }
-   }
-   
-   unsigned long t0=millis();
-   while (millis()-t0<tiempoSalpicado)
-   { 
-     if (digitalRead(FinCarreraInf)==LOW)
+     if (direccion=="retroceder")
        {
-         digitalWrite(enable,LOW); //activo el motor  
-         movimientoMotor(velPasos); 
+       digitalWrite(dir,HIGH);
+       unsigned long t0=millis();
+       while (millis()-t0<tiempoSalpicado)
+         { 
+           if (digitalRead(FinCarreraSup)==LOW)
+             {
+               digitalWrite(enable,LOW); //activo el motor  
+               movimientoMotor(velocidad); 
+             }
+         }
        }
-     else
-       {
-        origen=true; 
-       }
-   }
+     }
   }
 
 void lecturaSerial()
@@ -74,15 +103,14 @@ void lecturaSerial()
       if (i!=-1) //si se encuentra la palabra Init en el mensaje, se inicializa el core del programa
         {
           delay(50);
-          //conectado=true;
           Serial.println("salpicaduraInitOK");
         }
        else
         {
           parsearMensaje(lectura);
         }
-        }
-        }
+   }
+}
 
 
 void parsearMensaje(String msg) 
@@ -94,7 +122,6 @@ void parsearMensaje(String msg)
       String strVelEnsayo=msg.substring(index2+10);
       velPasos=strVelPasos.toInt();
       velEnsayo=strVelEnsayo.toInt();
-      //Serial.println("Se recibió las velocidades de configuración");
     }
   else 
   {
@@ -156,62 +183,37 @@ void setup() {
 void loop() {
 lecturaSerial();
 
-
 if (origen==true)
   {
-   //Serial.println("subiendo"); //para debug
    movimientoHaciaOrigen();
-   //Serial.println("subido y en posicion"); //para debug
    origen=false;
   }
 
-
 if (avanzar==true)
-{
-  velocidad=800; //velocidad de avance
-  salpicar(200,"avanzar"); 
+{ velocidad=800;
+  salpicar(200,velocidad,"avanzar"); 
   avanzar=false;
 }
 
-
 if (retroceder==true)
-{
-  velocidad=800; //velocidad de avance
-  salpicar(200,"retroceder"); 
+{ velocidad=800;
+  salpicar(200,velocidad,"retroceder"); 
   retroceder=false;
 }
 
-
 if (comenzar==true)
 {
-  //Serial.println("comenzando ensayo");
   velocidad=velPasos;
-  salpicar(velEnsayo,"avanzar");
+  salpicar(velEnsayo,velocidad,"avanzar");
   digitalWrite(enable,HIGH); //activo el motor  
-  //Serial.println("Ensayo finalizado"); //debug
   comenzar=false;
 }
 
 if (lubricar==true)
-{lubricar=false;
-  for(byte i=0;i<2;i++)
-    {
-    digitalWrite(enable,LOW);
-    digitalWrite(dir,LOW);
-    while(digitalRead(FinCarreraInf)==LOW)
-    {
-    movimientoMotor(800);
-    }
-    digitalWrite(dir,HIGH);
-    while(digitalRead(FinCarreraSup)==LOW)
-    {
-    movimientoMotor(800);
-    }
-    }
-    digitalWrite(enable,HIGH);
+{
+lubricarEje();
 }
 
-
-}//endLoop
+}
 
  /////////////////////////////////FIN DE LOOP/////////////////////////////////////////

@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="calibracion">
     <attribute name="title">
@@ -362,7 +362,7 @@
       <rect>
        <x>20</x>
        <y>120</y>
-       <width>111</width>
+       <width>91</width>
        <height>27</height>
       </rect>
      </property>
@@ -810,7 +810,7 @@
     </widget>
     <widget class="QPushButton" name="pushButtonCargarEnsayo">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>

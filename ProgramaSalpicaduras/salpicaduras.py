@@ -124,7 +124,7 @@ class Ui_Dialog(object):
         self.line_4.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_4.setObjectName("line_4")
         self.comboBoxVelocidadesCalib = QtWidgets.QComboBox(self.calibracion)
-        self.comboBoxVelocidadesCalib.setGeometry(QtCore.QRect(20, 120, 111, 27))
+        self.comboBoxVelocidadesCalib.setGeometry(QtCore.QRect(20, 120, 91, 27))
         self.comboBoxVelocidadesCalib.setObjectName("comboBoxVelocidadesCalib")
         self.labelVelocidadCalib = QtWidgets.QLabel(self.calibracion)
         self.labelVelocidadCalib.setGeometry(QtCore.QRect(20, 90, 111, 20))
@@ -263,7 +263,7 @@ class Ui_Dialog(object):
         self.labelNombreArchivoCalibracion.setText("")
         self.labelNombreArchivoCalibracion.setObjectName("labelNombreArchivoCalibracion")
         self.pushButtonCargarEnsayo = QtWidgets.QPushButton(self.ensayo)
-        self.pushButtonCargarEnsayo.setEnabled(False)
+        self.pushButtonCargarEnsayo.setEnabled(True)
         self.pushButtonCargarEnsayo.setGeometry(QtCore.QRect(280, 30, 88, 27))
         self.pushButtonCargarEnsayo.setObjectName("pushButtonCargarEnsayo")
         self.pushButtonGuardarEnsayo = QtWidgets.QPushButton(self.ensayo)
@@ -319,7 +319,7 @@ class Ui_Dialog(object):
         self.tabWidget.addTab(self.resultados, "")
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):

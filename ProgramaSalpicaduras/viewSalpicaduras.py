@@ -18,7 +18,6 @@ import serial
 import time
 
 class SerialThread(QThread):
-
     def __init__(self, puerto, bauds):
         super().__init__()
         self.puerto=puerto
@@ -28,7 +27,7 @@ class SerialThread(QThread):
     def run(self):
         try:
             self.arduino=serial.Serial(self.puerto, self.bauds)
-            time.sleep(1)
+            time.sleep(2)
             self.arduino.write('salpicaduraInit'.encode())
             while self.running:
                 if self.arduino.in_waiting > 0:
@@ -58,14 +57,13 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         model=Model()
         super().__init__()
         
-        #self.timer = QTimer(self)
-        #self.timer.start(1000) 
-        #self.timer.timeout.connect(self.lecturaSerialArduino)
         self.serialThread=SerialThread('COM8', 9600)
         self.serialThread.start()
         self.setupUi(self)
+        self.setWindowTitle("Ensayo de salpicaduras - ASTM7682")
         self.configLimitesliders("init","ambos")
         self.setFixedSize(self.size())
+        self.actualizar=False
         self.velPasosAnt=0
         self.velEnsayoAnt=0
         self.calibracion=None
@@ -86,7 +84,73 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.pushButtonAceptarResultado.clicked.connect(self.aceptarResultado)
         self.radioButtonFalla.toggled.connect(self.actualizacionRadioButton)
         self.radioButtonPasa.toggled.connect(self.actualizacionRadioButton)
+        self.pushButtonGuardar.clicked.connect(self.guardarResultados)
+        self.tableWidget.cellChanged.connect(self.guardarDfModificado)
+        self.pushButtonGuardarEnsayo.clicked.connect(self.guardarEnsayo)
+        self.pushButtonCargarEnsayo.clicked.connect(self.cargarEnsayo)
         self.funcionesMotor()
+
+    def cargarEnsayo(self):
+        #cargo el json y asigno los valores a las variables
+        #cargo el .pkl y asigno el dataframe a la variable
+        #abro un filedialog para seleccionar el archivo .json
+        file = QFileDialog.getOpenFileName(self, "Abrir archivo de ensayo", "", "JSON Files (*.json)")
+        if len(file[0])>0: #si se selecciono un archivo
+            try :
+                with open(file[0],'r') as data:
+                    datos=json.load(data)
+                    self.lineEditOTSOT.setEnabled(True)
+                    self.lineEditOTSOT.setText(datos["OT/SOT"])
+                    self.lineEditMuestra.setEnabled(True)
+                    self.lineEditMuestra.setText(datos["Muestra"])
+                    self.numeroDeRepeticiones=datos["Numero de repeticiones"]
+                    self.numeroRepeticion=datos["repeticion"]
+                    self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')
+                    #self.actualizar=True
+                    #self.dfResultados=pd.read_pickle(f'ensayos/{datos["archivoPkl"]}')
+                    #self.actualizarTabla()
+            except:
+                print("error al cargar el archivo Json, o error al leer los valores")
+
+    def guardarEnsayo(self):
+        #guardo un .json con las siguientes keys:
+        #"OT/SOT"
+        #"Muestra"
+        #"Numero de repeticiones"
+        #"repeticion"
+        #"archivo de calibracion"
+        #"guardo el dataframe como .pkl con el nombre como "OT/SOT_Muestra.pkl"
+
+        datosEnsayo={"OT/SOT":self.lineEditOTSOT.text(),"Muestra":self.lineEditMuestra.text(),
+                    "Numero de repeticiones":self.numeroDeRepeticiones,
+                    "repeticion":self.numeroRepeticion,"archivo de calibracion":self.nombreArchivoCalibracion[0],
+                    "archivoPkl":f'resultados_OT_SOT_{self.lineEditOTSOT.text()}_muestra_{self.lineEditMuestra.text()}.pkl'}
+    
+        with open(f'ensayos/{self.lineEditOTSOT.text()}_{self.lineEditMuestra.text()}.json','w') as f:
+            json.dump(datosEnsayo,f,indent=4)
+        #guardo el .pkl
+        self.dfResultados.to_pickle(f'ensayos/resultados_OT_SOT_{self.lineEditOTSOT.text()}_muestra_{self.lineEditMuestra.text()}.pkl')
+        print("Ensayo guardado")
+
+    def guardarDfModificado(self):
+        if self.actualizar==True:
+            self.actualizar=False
+            #como se modifico el df,al modificar alguna celda/s de la tablewidget, lo actualizo
+            for i in range(len(self.dfResultados)):
+                for j in range(len(self.dfResultados.columns)):
+                    self.dfResultados.iat[i,j]=self.tableWidget.item(i,j).text()
+            print("Se modificó el DataFrame")
+            print(self.dfResultados)
+
+    def guardarResultados(self):
+        # Guardar el DataFrame en un archivo .pkl con un nombre genérico
+        file_path, _ = QFileDialog.getSaveFileName(self, "Guardar Resultados", "", "Pickle Files (*.pkl)")
+        
+        if file_path:
+            if not file_path.endswith('.pkl'):
+                file_path += '.pkl'
+            self.dfResultados.to_pickle(file_path)
+            print(f"Resultados guardados en {file_path}")
 
     def funcionesMotor(self):
         self.pushButtonAvanzar.clicked.connect(lambda: self.configPosicionPiston("avanzar"))
@@ -113,9 +177,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         else:
             self.serialThread.enviarMje(mje)
 
-        #else: #si no cambio la velocidad de los sliders, no envio esta información
-         #   self.serialThread.enviarMje(mje)
-
     def comenzarEnsayo(self):
         self.chequeoSliderComSerial('comenzar')
         self.radioButtonFalla.setEnabled(True)
@@ -129,7 +190,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                 self.resultado="Falla"
             else:
                 self.resultado="Pasa"
-            print(self.resultado)
 
     def configPosicionPiston(self,mje):
         try:
@@ -151,22 +211,28 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         event.accept()
     
     def actualizarTabla(self):
+        self.actualizar=False
         self.tableWidget.setRowCount(len(self.dfResultados))
         self.tableWidget.setColumnCount(len(self.dfResultados.columns))
         self.tableWidget.setHorizontalHeaderLabels(self.dfResultados.columns)
-        print(self.dfResultados)
         for i in range(len(self.dfResultados)):
             for j in range(len(self.dfResultados.columns)):
                 item = QTableWidgetItem(str(self.dfResultados.iat[i, j]))
                 if j != len(self.dfResultados.columns) - 1:  # Si no es la última columna
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)  # Deshabilitar edición
                 self.tableWidget.setItem(i, j, item)
+        self.actualizar=True
   
     def actualizacionRadioButton(self):
         self.pushButtonAceptarResultado.setEnabled(True)
         self.pushButtonAceptarResultado.setStyleSheet("color: green")  
             
     def aceptarResultado(self):
+        self.pushButtonGuardarEnsayo.setEnabled(True)
+        self.pushButtonBorrar.setEnabled(True)
+        self.pushButtonExportarXlsx.setEnabled(True)
+        self.pushButtonGuardar.setEnabled(True)
+        self.pushButtonGenerarInforme.setEnabled(True)
         self.pushButtonComenzarEnsayo.setText("Comenzar")
         self.pushButtonAceptarResultado.setStyleSheet("color: gray")   
         self.radioButtonFalla.setEnabled(False)
@@ -176,11 +242,9 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             if self.radioButtonFalla.isChecked():
                 self.resultado="Falla"
             else:
-                self.resultado="Pasa"
-            print(self.resultado)
+                self.resultado="Pasa" 
         self.nuevaFila=pd.DataFrame([{"Nº Repeticion":self.numeroRepeticion,"Velocidad":self.velocidadEnsayo,"Resultado":self.resultado,"Observaciones":"No"}])
         self.dfResultados=pd.concat([self.dfResultados,self.nuevaFila],ignore_index=True)
-        print(self.dfResultados)
         self.actualizarTabla()
         self.incrementarNumeroEnsayo()     
             
@@ -245,7 +309,6 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         if len(file[0])>0: #si se selecciono un archivo
             try :
                 with open(file[0],'r') as data:
-                    print("configuración levantada")
                     self.horizontalSliderDelayPasos.setEnabled(True)
                     self.horizontalSliderTiempoEnsayo.setEnabled(True)
                     self.pushButtonAvanzarCalib.setEnabled(True)

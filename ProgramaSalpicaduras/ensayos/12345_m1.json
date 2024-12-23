@@ -1,0 +1,8 @@
+{
+    "OT/SOT": "12345",
+    "Muestra": "m1",
+    "Numero de repeticiones": 32,
+    "repeticion": 3,
+    "archivo de calibracion": "C:/Users/tin10/repos/liquidosPeligrosos/arduinoNema17/ProgramaSalpicaduras/calibracion/calibracion_20_12_2024",
+    "archivoPkl": "resultados_OT_SOT_12345_muestra_m1.pkl"
+}
