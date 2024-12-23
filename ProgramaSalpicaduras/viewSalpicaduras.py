@@ -103,6 +103,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                     self.lineEditOTSOT.setText(datos["OT/SOT"])
                     self.lineEditMuestra.setEnabled(True)
                     self.lineEditMuestra.setText(datos["Muestra"])
+                    self.lineEditNumeroRepeticiones.setEnabled(True)
                     self.numeroDeRepeticiones=datos["Numero de repeticiones"]
                     self.numeroRepeticion=datos["repeticion"]
                     self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')
@@ -301,11 +302,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             print("No se seleccionó ningún archivo")
         self.actualizarValoresPorcomboBoxEnsayo()
         
-    
-    def cargarConfiguracion(self):
-        file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")
-        self.nombreArchivoCalibracion=os.path.splitext(file[0])
-        self.direccionArchivoConfiguración=self.nombreArchivoCalibracion[0]
+    def seteoConfiguracionCalibracion(self,file):
         if len(file[0])>0: #si se selecciono un archivo
             try :
                 with open(file[0],'r') as data:
@@ -328,7 +325,13 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                     self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo)
             except:
                 print("error al cargar el archivo Json, o error al leer los valores")
-                
+
+    def cargarConfiguracion(self):
+        file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")
+        self.nombreArchivoCalibracion=os.path.splitext(file[0])
+        self.direccionArchivoConfiguración=self.nombreArchivoCalibracion[0]
+        self.seteoConfiguracionCalibracion(file)
+     
     def actualizarValoresPorcomboBoxCalibracion(self):
         if self.comboBoxVelocidadesCalib.currentText()!="": #esto es por que al borrar el combobox, para poblarlo con nuevos items, al ppio no va a tener items
             self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
