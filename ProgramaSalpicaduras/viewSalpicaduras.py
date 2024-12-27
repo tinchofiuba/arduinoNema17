@@ -361,7 +361,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                 self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
     
     def configSliderDelayPasos(self):
-        if self.horizontalSliderDelayPasos.value()==self.delayPasos or self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
+        if self.horizontalSliderDelayPasos.value()==self.delayPasos and self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
             self.pushButtonGuardarConfigCalib.setEnabled(False)
             print("ok,delay",self.tiempoEnsayo,self.delayPasos)
             print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
@@ -382,7 +382,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.labelValorVelocidadDeDescarga.setText(f'{velocidad:.2f} cm/s')
 
     def configSliderTiempoEnsayo(self):
-        if self.horizontalSliderDelayPasos.value()==self.delayPasos or self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
+        if self.horizontalSliderDelayPasos.value()==self.delayPasos and self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
             print("ok,tiempo",self.tiempoEnsayo,self.delayPasos)
             print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
             self.pushButtonGuardarConfigCalib.setEnabled(False)
