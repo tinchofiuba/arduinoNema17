@@ -67,6 +67,8 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.velPasosAnt=0
         self.velEnsayoAnt=0
         self.calibracion=None
+        self.delayPasos=None
+        self.tiempoEnsayo=None
         self.numeroRepeticion=1
         self.comboBoxVelocidadesCalib.setEnabled(False)
         self.pushButtonComenzarEnsayo.setStyleSheet("color: green")
@@ -315,7 +317,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                     self.pushButtonComenzarCalibracion.setEnabled(True)
                     self.calibracion=json.load(data)
                     self.comboBoxVelocidadesCalib.setEnabled(True)
-                    self.pushButtonGuardarConfigCalib.setEnabled(True)
+                    #self.pushButtonGuardarConfigCalib.setEnabled(True)
                     self.comboBoxVelocidadesCalib.clear()
                     self.comboBoxVelocidadesCalib.addItems(self.calibracion.keys())
                     self.actualizarValoresPorcomboBoxEnsayo()
@@ -323,6 +325,7 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                     self.tiempoEnsayo=self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["tiempoEnsayo"]
                     self.horizontalSliderDelayPasos.setValue(self.delayPasos) 
                     self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo)
+                    print(self.delayPasos)
             except:
                 print("error al cargar el archivo Json, o error al leer los valores")
 
@@ -358,6 +361,15 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
                 self.horizontalSliderTiempoEnsayo.setValue(self.tiempoEnsayo) #seteo el valor por default de la ultima config
     
     def configSliderDelayPasos(self):
+        if self.horizontalSliderDelayPasos.value()==self.delayPasos or self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
+            self.pushButtonGuardarConfigCalib.setEnabled(False)
+            print("ok,delay",self.tiempoEnsayo,self.delayPasos)
+            print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
+        else:
+            if self.delayPasos!=None and self.tiempoEnsayo!=None:
+                print("mal,delay",self.tiempoEnsayo,self.delayPasos)
+                print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
+                self.verificacionGuardarConfiguracion()
         self.labelValorDelayPasos.setText(str(self.horizontalSliderDelayPasos.value()))
         mCalibracion=-0.0028
         bCalibracion=5.9673
@@ -368,11 +380,18 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         volumenDescargado=caudal*self.horizontalSliderTiempoEnsayo.value()/1000
         self.labelValorCaudalDeDescarga.setText(f'{caudal:.2f} ml/s')
         self.labelValorVelocidadDeDescarga.setText(f'{velocidad:.2f} cm/s')
-        self.verificacionGuardarConfiguracion()
-        
+
     def configSliderTiempoEnsayo(self):
+        if self.horizontalSliderDelayPasos.value()==self.delayPasos or self.horizontalSliderTiempoEnsayo.value()==self.tiempoEnsayo:
+            print("ok,tiempo",self.tiempoEnsayo,self.delayPasos)
+            print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
+            self.pushButtonGuardarConfigCalib.setEnabled(False)
+        else:
+            if self.delayPasos!=None and self.tiempoEnsayo!=None:
+                print("mal,tiempo",self.tiempoEnsayo,self.delayPasos)
+                print(self.horizontalSliderDelayPasos.value(),self.horizontalSliderTiempoEnsayo.value())
+                self.verificacionGuardarConfiguracion()
         self.labelValorTiempoEnsayo.setText(str(self.horizontalSliderTiempoEnsayo.value()))
-        self.verificacionGuardarConfiguracion()
         
     def verificacionGuardarConfiguracion(self):
         #verifico que tanto el otro slider como el lineedit esten OK
