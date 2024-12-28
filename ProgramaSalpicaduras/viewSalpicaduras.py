@@ -93,27 +93,31 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
         self.funcionesMotor()
 
     def cargarEnsayo(self):
-        #cargo el json y asigno los valores a las variables
-        #cargo el .pkl y asigno el dataframe a la variable
-        #abro un filedialog para seleccionar el archivo .json
         file = QFileDialog.getOpenFileName(self, "Abrir archivo de ensayo", "", "JSON Files (*.json)")
         if len(file[0])>0: #si se selecciono un archivo
-            try :
-                with open(file[0],'r') as data:
-                    datos=json.load(data)
-                    self.lineEditOTSOT.setEnabled(True)
-                    self.lineEditOTSOT.setText(datos["OT/SOT"])
-                    self.lineEditMuestra.setEnabled(True)
-                    self.lineEditMuestra.setText(datos["Muestra"])
-                    self.lineEditNumeroRepeticiones.setEnabled(True)
-                    self.numeroDeRepeticiones=datos["Numero de repeticiones"]
-                    self.numeroRepeticion=datos["repeticion"]
-                    self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')
-                    #self.actualizar=True
-                    #self.dfResultados=pd.read_pickle(f'ensayos/{datos["archivoPkl"]}')
-                    #self.actualizarTabla()
-            except:
-                print("error al cargar el archivo Json, o error al leer los valores")
+            self.cargarDatosCalibracion_o_ensayo("Abrir ensayo",file)
+            self.setearDatosEnsayo(file)
+
+    def setearDatosEnsayo(self,file):
+        try :
+            with open(file[0],'r') as data:
+                datos=json.load(data)
+                self.lineEditOTSOT.setEnabled(True)
+                self.lineEditOTSOT.setText(datos["OT/SOT"])
+                self.lineEditMuestra.setEnabled(True)
+                self.lineEditMuestra.setText(datos["Muestra"])
+                self.lineEditNumeroRepeticiones.setEnabled(True)
+                self.numeroDeRepeticiones=datos["Numero de repeticiones"]
+                self.numeroRepeticion=datos["repeticion"]
+                self.labelValorRepeticion.setText(f'{self.numeroRepeticion}/{self.numeroDeRepeticiones}')
+                
+                #falta abrir los valores
+                
+                #self.actualizar=True
+                #self.dfResultados=pd.read_pickle(f'ensayos/{datos["archivoPkl"]}')
+                #self.actualizarTabla()
+        except:
+            print("error al cargar el archivo Json, o error al leer los valores")
 
     def guardarEnsayo(self):
         #guardo un .json con las siguientes keys:
@@ -329,12 +333,18 @@ class GUI_Salpicaduras(QDialog, Ui_Dialog):
             except:
                 print("error al cargar el archivo Json, o error al leer los valores")
 
-    def cargarConfiguracion(self):
-        file = QFileDialog.getOpenFileName(self, "Abrir archivo de calibración", "", "JSON Files (*.json)")
-        self.nombreArchivoCalibracion=os.path.splitext(file[0])
-        self.direccionArchivoConfiguración=self.nombreArchivoCalibracion[0]
-        self.seteoConfiguracionCalibracion(file)
-     
+    def cargarConfiguracion(self,tipoDeCarga,*args):
+        if "ensayo" in kwargs:
+            self.cargarDatosCalibracion_o_ensayo("Abrir ensayo",xxx)
+        else:
+            self.cargarDatosCalibracion_o_ensayo("Abrir archivo de calibración")
+    
+    def cargarDatosCalibracion_o_ensayo(self,nota,args):
+            file = QFileDialog.getOpenFileName(self, nota, "", "JSON Files (*.json)")
+            self.nombreArchivoCalibracion=os.path.splitext(file[0])
+            self.direccionArchivoConfiguración=self.nombreArchivoCalibracion[0]
+            self.seteoConfiguracionCalibracion(file)
+
     def actualizarValoresPorcomboBoxCalibracion(self):
         if self.comboBoxVelocidadesCalib.currentText()!="": #esto es por que al borrar el combobox, para poblarlo con nuevos items, al ppio no va a tener items
             self.horizontalSliderDelayPasos.setValue(self.calibracion[self.comboBoxVelocidadesCalib.currentText()]["delayPasos"]) 
